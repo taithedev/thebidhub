@@ -1,6 +1,6 @@
 --[[
-    ZuzifyStar
-    UI: Orion
+    ZuzifyRBX
+    UI: Fluent-modded by StyearX
     Password: password
     Owner: mrcoptai / 717544874
     Beta Gamepass: 1944876349
@@ -26,14 +26,14 @@ local hasBeta = isOwner
 
 if not isOwner then
     local gui = Instance.new("ScreenGui")
-    gui.Name = "ZuzifyStar_Pass"
+    gui.Name = "ZuzifyRBX_Pass"
     gui.ResetOnSpawn = false
     gui.Parent = game:GetService("CoreGui")
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 360, 0, 180)
     frame.Position = UDim2.new(0.5, -180, 0.5, -90)
-    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     frame.BorderSizePixel = 0
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
@@ -41,8 +41,8 @@ if not isOwner then
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 48)
     title.BackgroundTransparency = 1
-    title.Text = "ZuzifyStar"
-    title.TextColor3 = Color3.fromRGB(160, 255, 240)
+    title.Text = "ZuzifyRBX"
+    title.TextColor3 = Color3.fromRGB(140, 255, 230)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 22
     title.Parent = frame
@@ -50,7 +50,7 @@ if not isOwner then
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.82, 0, 0, 40)
     box.Position = UDim2.new(0.09, 0, 0.38, 0)
-    box.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+    box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = "Enter Password..."
     box.Font = Enum.Font.Gotham
@@ -62,7 +62,7 @@ if not isOwner then
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.82, 0, 0, 40)
     btn.Position = UDim2.new(0.09, 0, 0.68, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 140, 125)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 150, 130)
     btn.Text = "Unlock"
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
@@ -90,21 +90,24 @@ end
 
 if not passwordPassed then return end
 
--- Check Beta Gamepass
 pcall(function()
     hasBeta = MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, BETA_GAMEPASS_ID) or isOwner
 end)
 
--- ================= LOAD ORION =================
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/jensonhirst/Orion/main/source"))()
+-- ================= LOAD FLUENT-MODDED =================
+local Fluent = loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"))()
+local SaveManager = Fluent.SaveManager
+local InterfaceManager = Fluent.InterfaceManager
 
-local Window = OrionLib:MakeWindow({
-    Name = "ZuzifyStar" .. (isOwner and " [OWNER]" or ""),
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "ZuzifyStar",
-    IntroEnabled = true,
-    IntroText = "ZuzifyStar",
+local Window = Fluent:CreateWindow({
+    Title = "ZuzifyRBX" .. (isOwner and " [OWNER]" or ""),
+    SubTitle = "by Tai (vertexi8)",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 480),
+    Acrylic = true,
+    Theme = "AMOLED",
+    MinimizeKey = Enum.KeyCode.LeftControl,
+    Search = true,
 })
 
 -- ================= FEATURES =================
@@ -113,8 +116,6 @@ local Features = {
     ESP_Names = true,
     ESP_Distance = true,
     ESP_Chams = true,
-    ESP_Tracers = false,
-    ESP_Boxes = false,
 
     NoclipType = "None",
     FlyType = "None",
@@ -146,7 +147,6 @@ local Features = {
     FlingNearest = false,
     FlingTarget = false,
     FlingAll = false,
-    SpinFling = false,
 
     Invisible = false,
     ServerInvisBypass = false,
@@ -161,9 +161,9 @@ local Features = {
 }
 
 local RoleColors = {
-    Murderer = Color3.fromRGB(255, 35, 35),
-    Sheriff  = Color3.fromRGB(40, 120, 255),
-    Innocent = Color3.fromRGB(40, 225, 70),
+    Murderer = Color3.fromRGB(255, 40, 40),
+    Sheriff  = Color3.fromRGB(45, 125, 255),
+    Innocent = Color3.fromRGB(45, 230, 80),
 }
 
 local ESPObjects = {}
@@ -172,35 +172,6 @@ local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch = 0, 0, 0, 0
 local currentMurderer, currentSheriff = nil, nil
 local PlayerList = {}
 local originalTransparency = {}
-local ConfigName = "ZuzifyStar_Manual.json"
-
--- ================= CONFIG =================
-local function SaveConfig()
-    pcall(function()
-        writefile(ConfigName, HttpService:JSONEncode(Features))
-        OrionLib:MakeNotification({
-            Name = "Config",
-            Content = "Saved successfully",
-            Time = 3
-        })
-    end)
-end
-
-local function LoadConfig()
-    pcall(function()
-        if isfile and isfile(ConfigName) then
-            local data = HttpService:JSONDecode(readfile(ConfigName))
-            for k, v in pairs(data) do
-                if Features[k] ~= nil then Features[k] = v end
-            end
-            OrionLib:MakeNotification({
-                Name = "Config",
-                Content = "Loaded successfully",
-                Time = 3
-            })
-        end
-    end)
-end
 
 -- ================= ROLE =================
 local function GetRole(plr)
@@ -256,7 +227,7 @@ local function CreateESP(plr)
 
     if Features.ESP_Names or Features.ESP_Distance then
         local bb = Instance.new("BillboardGui")
-        bb.Name = "ZS_ESP"
+        bb.Name = "ZRBX_ESP"
         bb.Adornee = head
         bb.Size = UDim2.new(0, 210, 0, 52)
         bb.StudsOffset = Vector3.new(0, 2.9, 0)
@@ -292,7 +263,7 @@ local function CreateESP(plr)
 
     if Features.ESP_Chams then
         local hl = Instance.new("Highlight")
-        hl.Name = "ZS_Chams"
+        hl.Name = "ZRBX_Chams"
         hl.Adornee = char
         hl.FillColor = color
         hl.OutlineColor = color
@@ -404,7 +375,6 @@ local function SetInvisible(state)
     if not state then table.clear(originalTransparency) end
 end
 
--- Server-side invisibility attempt (best effort client methods)
 local function ApplyServerInvisBypass()
     local char = LocalPlayer.Character
     if not char then return end
@@ -522,16 +492,6 @@ RunService.RenderStepped:Connect(function()
             if role == "Murderer" then mur = plr end
             if role == "Sheriff" then sher = plr end
         end
-        if Features.RoleNotify then
-            if mur and mur ~= currentMurderer then
-                currentMurderer = mur
-                OrionLib:MakeNotification({Name = "Role", Content = "Murderer: " .. mur.Name, Time = 3})
-            end
-            if sher and sher ~= currentSheriff then
-                currentSheriff = sher
-                OrionLib:MakeNotification({Name = "Role", Content = "Sheriff: " .. sher.Name, Time = 3})
-            end
-        end
         currentMurderer = mur
         currentSheriff = sher
     end
@@ -594,10 +554,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     if Features.HitboxExtender then ApplyHitbox() end
-
-    if Features.ServerInvisBypass then
-        ApplyServerInvisBypass()
-    end
+    if Features.ServerInvisBypass then ApplyServerInvisBypass() end
 
     if (Features.Aimbot or Features.SilentAim) and root then
         local targetPlr = GetClosestPlayer(Features.AimbotFOV)
@@ -719,96 +676,279 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ================= UI (ORION) =================
-local HomeTab = Window:MakeTab({Name = "Home", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-HomeTab:AddParagraph("ZuzifyStar", "Loaded successfully\nPassword protected\nOwner + Beta system active")
+-- ================= UI TABS =================
+local HomeTab = Window:AddTab({ Title = "Home", Icon = "solar/home-bold" })
+HomeTab:AddParagraph("Welcome", "ZuzifyRBX loaded successfully\nPassword protected + Owner & Beta system")
 if isOwner then
-    HomeTab:AddLabel("OWNER ACCESS GRANTED")
+    HomeTab:AddParagraph("Owner", "OWNER ACCESS GRANTED")
 end
 if hasBeta then
-    HomeTab:AddLabel("BETA UNLOCKED")
+    HomeTab:AddParagraph("Beta", "BETA UNLOCKED")
 else
-    HomeTab:AddLabel("Beta locked - Buy gamepass 1944876349")
+    HomeTab:AddParagraph("Beta", "Beta locked - Buy gamepass 1944876349")
 end
 
-local VisualsTab = Window:MakeTab({Name = "Visuals", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-VisualsTab:AddToggle({Name = "Enable ESP", Default = false, Callback = function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end end})
-VisualsTab:AddToggle({Name = "Names + Role", Default = true, Callback = function(v) Features.ESP_Names = v RefreshESP() end})
-VisualsTab:AddToggle({Name = "Distance", Default = true, Callback = function(v) Features.ESP_Distance = v end})
-VisualsTab:AddToggle({Name = "Chams", Default = true, Callback = function(v) Features.ESP_Chams = v RefreshESP() end})
-VisualsTab:AddButton({Name = "Refresh ESP", Callback = RefreshESP})
-VisualsTab:AddButton({Name = "Clear ESP", Callback = function() ClearAllESP() Features.ESP = false end})
+local VisualsTab = Window:AddTab({ Title = "Visuals", Icon = "solar/eye-bold" })
+VisualsTab:AddToggle("ESP", {
+    Title = "Enable ESP",
+    Default = false,
+    Callback = function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end end
+})
+VisualsTab:AddToggle("Names", {
+    Title = "Names + Role",
+    Default = true,
+    Callback = function(v) Features.ESP_Names = v RefreshESP() end
+})
+VisualsTab:AddToggle("Distance", {
+    Title = "Distance",
+    Default = true,
+    Callback = function(v) Features.ESP_Distance = v end
+})
+VisualsTab:AddToggle("Chams", {
+    Title = "Chams",
+    Default = true,
+    Callback = function(v) Features.ESP_Chams = v RefreshESP() end
+})
+VisualsTab:AddButton({
+    Title = "Refresh ESP",
+    Callback = RefreshESP
+})
+VisualsTab:AddButton({
+    Title = "Clear ESP",
+    Callback = function() ClearAllESP() Features.ESP = false end
+})
 
-local MovementTab = Window:MakeTab({Name = "Movement", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-MovementTab:AddDropdown({Name = "Noclip Type", Default = "None", Options = {"None", "Normal", "Smooth", "MM2"}, Callback = function(v) Features.NoclipType = v ApplyNoclip() end})
-MovementTab:AddDropdown({Name = "Fly Type", Default = "None", Options = {"None", "BodyVelocity", "Smooth"}, Callback = function(v) Features.FlyType = v if v == "None" then CleanupFly() else SetupFly() end end})
-MovementTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 200, Default = 60, Callback = function(v) Features.FlySpeed = v end})
-MovementTab:AddToggle({Name = "Infinite Jump", Default = false, Callback = function(v) Features.InfiniteJump = v end})
-MovementTab:AddSlider({Name = "Walk Speed", Min = 10, Max = 200, Default = 16, Callback = function(v) Features.WalkSpeed = v ApplyStats() end})
-MovementTab:AddSlider({Name = "Jump Power", Min = 30, Max = 200, Default = 50, Callback = function(v) Features.JumpPower = v ApplyStats() end})
-MovementTab:AddToggle({Name = "Anti Fling", Default = true, Callback = function(v) Features.AntiFling = v end})
-MovementTab:AddToggle({Name = "Anti Die", Default = false, Callback = function(v) Features.AntiDie = v end})
-MovementTab:AddToggle({Name = "Hitbox Extender", Default = false, Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end})
-MovementTab:AddSlider({Name = "Hitbox Size", Min = 3, Max = 22, Default = 9, Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end end})
-MovementTab:AddToggle({Name = "Anti AFK", Default = true, Callback = function(v) Features.AntiAFK = v end})
-
-local CombatTab = Window:MakeTab({Name = "Combat", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-CombatTab:AddToggle({Name = "Aimbot", Default = false, Callback = function(v) Features.Aimbot = v end})
-CombatTab:AddToggle({Name = "Silent Aim", Default = false, Callback = function(v) Features.SilentAim = v end})
-CombatTab:AddSlider({Name = "FOV", Min = 50, Max = 400, Default = 230, Callback = function(v) Features.AimbotFOV = v end})
-CombatTab:AddSlider({Name = "Smoothness", Min = 5, Max = 40, Default = 13, Callback = function(v) Features.AimbotSmooth = v / 100 end})
-CombatTab:AddDropdown({Name = "Aim Part", Default = "HumanoidRootPart", Options = {"HumanoidRootPart", "Head", "UpperTorso"}, Callback = function(v) Features.AimPart = v end})
-CombatTab:AddToggle({Name = "Auto Kill", Default = false, Callback = function(v) Features.AutoKill = v end})
-CombatTab:AddToggle({Name = "Knife Aura", Default = false, Callback = function(v) Features.KnifeAura = v end})
-CombatTab:AddSlider({Name = "Aura Range", Min = 6, Max = 30, Default = 15, Callback = function(v) Features.AuraRange = v end})
-CombatTab:AddDropdown({Name = "Select Player", Default = "None", Options = PlayerList, Callback = function(v) Features.SelectedTarget = v end})
-CombatTab:AddButton({Name = "Refresh Players", Callback = function()
-    PlayerList = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
+local MovementTab = Window:AddTab({ Title = "Movement", Icon = "solar/running-bold" })
+MovementTab:AddDropdown("NoclipType", {
+    Title = "Noclip Type",
+    Values = {"None", "Normal", "Smooth", "MM2"},
+    Default = 1,
+    Callback = function(v) Features.NoclipType = v ApplyNoclip() end
+})
+MovementTab:AddDropdown("FlyType", {
+    Title = "Fly Type",
+    Values = {"None", "BodyVelocity", "Smooth"},
+    Default = 1,
+    Callback = function(v)
+        Features.FlyType = v
+        if v == "None" then CleanupFly() else SetupFly() end
     end
-end})
-CombatTab:AddToggle({Name = "Kill Selected", Default = false, Callback = function(v) Features.KillTarget = v end})
+})
+MovementTab:AddSlider("FlySpeed", {
+    Title = "Fly Speed",
+    Default = 60,
+    Min = 10,
+    Max = 200,
+    Callback = function(v) Features.FlySpeed = v end
+})
+MovementTab:AddToggle("InfiniteJump", {
+    Title = "Infinite Jump",
+    Default = false,
+    Callback = function(v) Features.InfiniteJump = v end
+})
+MovementTab:AddSlider("WalkSpeed", {
+    Title = "Walk Speed",
+    Default = 16,
+    Min = 10,
+    Max = 200,
+    Callback = function(v) Features.WalkSpeed = v ApplyStats() end
+})
+MovementTab:AddSlider("JumpPower", {
+    Title = "Jump Power",
+    Default = 50,
+    Min = 30,
+    Max = 200,
+    Callback = function(v) Features.JumpPower = v ApplyStats() end
+})
+MovementTab:AddToggle("AntiFling", {
+    Title = "Anti Fling",
+    Default = true,
+    Callback = function(v) Features.AntiFling = v end
+})
+MovementTab:AddToggle("AntiDie", {
+    Title = "Anti Die",
+    Default = false,
+    Callback = function(v) Features.AntiDie = v end
+})
+MovementTab:AddToggle("Hitbox", {
+    Title = "Hitbox Extender",
+    Default = false,
+    Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end
+})
+MovementTab:AddSlider("HitboxSize", {
+    Title = "Hitbox Size",
+    Default = 9,
+    Min = 3,
+    Max = 22,
+    Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end end
+})
+MovementTab:AddToggle("AntiAFK", {
+    Title = "Anti AFK",
+    Default = true,
+    Callback = function(v) Features.AntiAFK = v end
+})
 
-local CarryTab = Window:MakeTab({Name = "Carry", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-CarryTab:AddToggle({Name = "Piggyback", Default = false, Callback = function(v) Features.Piggyback = v end})
-CarryTab:AddToggle({Name = "Front Carry", Default = false, Callback = function(v) Features.FrontCarry = v end})
-CarryTab:AddToggle({Name = "Side Carry", Default = false, Callback = function(v) Features.SideCarry = v end})
+local CombatTab = Window:AddTab({ Title = "Combat", Icon = "solar/sword-bold" })
+CombatTab:AddToggle("Aimbot", {
+    Title = "Aimbot",
+    Default = false,
+    Callback = function(v) Features.Aimbot = v end
+})
+CombatTab:AddToggle("SilentAim", {
+    Title = "Silent Aim",
+    Default = false,
+    Callback = function(v) Features.SilentAim = v end
+})
+CombatTab:AddSlider("FOV", {
+    Title = "FOV",
+    Default = 230,
+    Min = 50,
+    Max = 400,
+    Callback = function(v) Features.AimbotFOV = v end
+})
+CombatTab:AddSlider("Smoothness", {
+    Title = "Smoothness",
+    Default = 13,
+    Min = 5,
+    Max = 40,
+    Callback = function(v) Features.AimbotSmooth = v / 100 end
+})
+CombatTab:AddDropdown("AimPart", {
+    Title = "Aim Part",
+    Values = {"HumanoidRootPart", "Head", "UpperTorso"},
+    Default = 1,
+    Callback = function(v) Features.AimPart = v end
+})
+CombatTab:AddToggle("AutoKill", {
+    Title = "Auto Kill",
+    Default = false,
+    Callback = function(v) Features.AutoKill = v end
+})
+CombatTab:AddToggle("KnifeAura", {
+    Title = "Knife Aura",
+    Default = false,
+    Callback = function(v) Features.KnifeAura = v end
+})
+CombatTab:AddSlider("AuraRange", {
+    Title = "Aura Range",
+    Default = 15,
+    Min = 6,
+    Max = 30,
+    Callback = function(v) Features.AuraRange = v end
+})
+CombatTab:AddDropdown("SelectPlayer", {
+    Title = "Select Player",
+    Values = PlayerList,
+    Default = 1,
+    Callback = function(v) Features.SelectedTarget = v end
+})
+CombatTab:AddButton({
+    Title = "Refresh Players",
+    Callback = function()
+        PlayerList = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
+        end
+    end
+})
+CombatTab:AddToggle("KillSelected", {
+    Title = "Kill Selected",
+    Default = false,
+    Callback = function(v) Features.KillTarget = v end
+})
 
-local TrollTab = Window:MakeTab({Name = "Troll", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-TrollTab:AddToggle({Name = "Fling Nearest", Default = false, Callback = function(v) Features.FlingNearest = v end})
-TrollTab:AddToggle({Name = "Fling Selected", Default = false, Callback = function(v) Features.FlingTarget = v end})
-TrollTab:AddToggle({Name = "Fling All", Default = false, Callback = function(v) Features.FlingAll = v end})
-TrollTab:AddToggle({Name = "Spin Fling", Default = false, Callback = function(v) Features.SpinFling = v end})
+local CarryTab = Window:AddTab({ Title = "Carry", Icon = "solar/users-group-rounded-bold" })
+CarryTab:AddToggle("Piggyback", {
+    Title = "Piggyback",
+    Default = false,
+    Callback = function(v) Features.Piggyback = v end
+})
+CarryTab:AddToggle("FrontCarry", {
+    Title = "Front Carry",
+    Default = false,
+    Callback = function(v) Features.FrontCarry = v end
+})
+CarryTab:AddToggle("SideCarry", {
+    Title = "Side Carry",
+    Default = false,
+    Callback = function(v) Features.SideCarry = v end
+})
 
-local SelfTab = Window:MakeTab({Name = "Self", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-SelfTab:AddToggle({Name = "Invisible", Default = false, Callback = function(v) Features.Invisible = v SetInvisible(v) end})
-SelfTab:AddToggle({Name = "Server Invis Bypass (Attempt)", Default = false, Callback = function(v) Features.ServerInvisBypass = v if v then ApplyServerInvisBypass() end end})
-SelfTab:AddToggle({Name = "Glitch Self", Default = false, Callback = function(v) Features.GlitchSelf = v end})
+local TrollTab = Window:AddTab({ Title = "Troll", Icon = "solar/danger-bold" })
+TrollTab:AddToggle("FlingNearest", {
+    Title = "Fling Nearest",
+    Default = false,
+    Callback = function(v) Features.FlingNearest = v end
+})
+TrollTab:AddToggle("FlingSelected", {
+    Title = "Fling Selected",
+    Default = false,
+    Callback = function(v) Features.FlingTarget = v end
+})
+TrollTab:AddToggle("FlingAll", {
+    Title = "Fling All",
+    Default = false,
+    Callback = function(v) Features.FlingAll = v end
+})
 
-local UtilityTab = Window:MakeTab({Name = "Utility", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-UtilityTab:AddToggle({Name = "Coin Farm", Default = false, Callback = function(v) Features.CoinFarm = v end})
-UtilityTab:AddToggle({Name = "Grab Gun", Default = false, Callback = function(v) Features.GrabGun = v end})
-UtilityTab:AddToggle({Name = "TP to Murderer", Default = false, Callback = function(v) Features.TPMurderer = v end})
-UtilityTab:AddToggle({Name = "TP to Sheriff", Default = false, Callback = function(v) Features.TPSheriff = v end})
-UtilityTab:AddToggle({Name = "Role Notify", Default = true, Callback = function(v) Features.RoleNotify = v end})
+local SelfTab = Window:AddTab({ Title = "Self", Icon = "solar/user-bold" })
+SelfTab:AddToggle("Invisible", {
+    Title = "Invisible",
+    Default = false,
+    Callback = function(v) Features.Invisible = v SetInvisible(v) end
+})
+SelfTab:AddToggle("ServerInvis", {
+    Title = "Server Invis Bypass (Attempt)",
+    Default = false,
+    Callback = function(v) Features.ServerInvisBypass = v if v then ApplyServerInvisBypass() end end
+})
+SelfTab:AddToggle("GlitchSelf", {
+    Title = "Glitch Self",
+    Default = false,
+    Callback = function(v) Features.GlitchSelf = v end
+})
 
-local TeleportsTab = Window:MakeTab({Name = "Teleports", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-TeleportsTab:AddButton({Name = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end})
-TeleportsTab:AddButton({Name = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end})
-TeleportsTab:AddButton({Name = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end})
-TeleportsTab:AddButton({Name = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end})
-TeleportsTab:AddButton({Name = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end})
+local UtilityTab = Window:AddTab({ Title = "Utility", Icon = "solar/widget-bold" })
+UtilityTab:AddToggle("CoinFarm", {
+    Title = "Coin Farm",
+    Default = false,
+    Callback = function(v) Features.CoinFarm = v end
+})
+UtilityTab:AddToggle("GrabGun", {
+    Title = "Grab Gun",
+    Default = false,
+    Callback = function(v) Features.GrabGun = v end
+})
+UtilityTab:AddToggle("TPMurderer", {
+    Title = "TP to Murderer",
+    Default = false,
+    Callback = function(v) Features.TPMurderer = v end
+})
+UtilityTab:AddToggle("TPSheriff", {
+    Title = "TP to Sheriff",
+    Default = false,
+    Callback = function(v) Features.TPSheriff = v end
+})
+UtilityTab:AddToggle("RoleNotify", {
+    Title = "Role Notify",
+    Default = true,
+    Callback = function(v) Features.RoleNotify = v end
+})
 
--- BETA TAB
-local BetaTab = Window:MakeTab({Name = "Beta", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local TeleportsTab = Window:AddTab({ Title = "Teleports", Icon = "solar/map-point-bold" })
+TeleportsTab:AddButton({ Title = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end })
+TeleportsTab:AddButton({ Title = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end })
+TeleportsTab:AddButton({ Title = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end })
+TeleportsTab:AddButton({ Title = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end })
+TeleportsTab:AddButton({ Title = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end })
+
+local BetaTab = Window:AddTab({ Title = "Beta", Icon = "solar/star-bold" })
 if hasBeta then
-    BetaTab:AddParagraph("Beta Unlocked", "You own the Beta gamepass (or are Owner).\nExtra experimental features can be added here.")
-    BetaTab:AddLabel("Thanks for supporting!")
+    BetaTab:AddParagraph("Unlocked", "You own the Beta gamepass or are Owner.\nExtra experimental features can be added here.")
 else
-    BetaTab:AddParagraph("Beta Locked", "To unlock the Beta page and features you need to buy the gamepass.\n\nGamepass ID: 1944876349")
+    BetaTab:AddParagraph("Locked", "To unlock Beta features buy the gamepass.\n\nGamepass ID: 1944876349")
     BetaTab:AddButton({
-        Name = "Open Gamepass Page",
+        Title = "Open Gamepass Page",
         Callback = function()
             pcall(function()
                 MarketplaceService:PromptGamePassPurchase(LocalPlayer, BETA_GAMEPASS_ID)
@@ -817,32 +957,46 @@ else
     })
 end
 
-local SettingsTab = Window:MakeTab({Name = "Settings", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-SettingsTab:AddButton({Name = "Save Config", Callback = SaveConfig})
-SettingsTab:AddButton({Name = "Load Config", Callback = LoadConfig})
-SettingsTab:AddButton({Name = "Rejoin", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end})
-SettingsTab:AddButton({Name = "Server Hop", Callback = function()
-    pcall(function()
-        local data = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        local list = {}
-        for _, s in ipairs(data.data or {}) do
-            if s.playing < s.maxPlayers and s.id ~= game.JobId then
-                table.insert(list, s.id)
+local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "solar/settings-bold" })
+SettingsTab:AddButton({
+    Title = "Rejoin",
+    Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end
+})
+SettingsTab:AddButton({
+    Title = "Server Hop",
+    Callback = function()
+        pcall(function()
+            local data = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+            local list = {}
+            for _, s in ipairs(data.data or {}) do
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    table.insert(list, s.id)
+                end
             end
-        end
-        if #list > 0 then
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, list[math.random(1, #list)], LocalPlayer)
-        end
-    end)
-end})
-
-OrionLib:Init()
-LoadConfig()
-
-OrionLib:MakeNotification({
-    Name = "ZuzifyStar",
-    Content = "Loaded successfully" .. (hasBeta and " | Beta Unlocked" or ""),
-    Time = 5
+            if #list > 0 then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, list[math.random(1, #list)], LocalPlayer)
+            end
+        end)
+    end
 })
 
-print("ZuzifyStar loaded | Owner:", isOwner, "| Beta:", hasBeta)
+-- SaveManager + InterfaceManager setup
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+InterfaceManager:SetFolder("ZuzifyRBX")
+SaveManager:SetFolder("ZuzifyRBX/Config")
+
+InterfaceManager:BuildInterfaceSection(SettingsTab)
+SaveManager:BuildConfigSection(SettingsTab)
+
+SaveManager:LoadAutoloadConfig()
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "ZuzifyRBX",
+    Content = "Loaded successfully" .. (hasBeta and " | Beta Unlocked" or ""),
+    Duration = 5
+})
+
+print("ZuzifyRBX loaded | Owner:", isOwner, "| Beta:", hasBeta)
