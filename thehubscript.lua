@@ -1,8 +1,9 @@
 --[[
     ZuzifyStar
+    UI: Orion
     Password: password
     Owner: mrcoptai / 717544874
-    Authors: Tai (vertexi8) & daviddabag
+    Beta Gamepass: 1944876349
 ]]
 
 local Players = game:GetService("Players")
@@ -11,15 +12,17 @@ local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ================= PASSWORD + OWNER =================
+-- ================= PASSWORD + OWNER + BETA =================
 local CORRECT_PASSWORD = "password"
+local BETA_GAMEPASS_ID = 1944876349
 local isOwner = (LocalPlayer.Name:lower() == "mrcoptai") or (LocalPlayer.UserId == 717544874)
 local passwordPassed = isOwner
+local hasBeta = isOwner
 
 if not isOwner then
     local gui = Instance.new("ScreenGui")
@@ -33,7 +36,6 @@ if not isOwner then
     frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
     frame.BorderSizePixel = 0
     frame.Parent = gui
-
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
     local title = Instance.new("TextLabel")
@@ -88,25 +90,35 @@ end
 
 if not passwordPassed then return end
 
--- ================= LOAD UI =================
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Luxware-UI-Library/main/Source.lua"))()
-local Window = Library.CreateWindow("ZuzifyStar" .. (isOwner and " [OWNER]" or ""), 6105620301)
+-- Check Beta Gamepass
+pcall(function()
+    hasBeta = MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, BETA_GAMEPASS_ID) or isOwner
+end)
+
+-- ================= LOAD ORION =================
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/jensonhirst/Orion/main/source"))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "ZuzifyStar" .. (isOwner and " [OWNER]" or ""),
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "ZuzifyStar",
+    IntroEnabled = true,
+    IntroText = "ZuzifyStar",
+})
 
 -- ================= FEATURES =================
 local Features = {
-    -- ESP
     ESP = false,
     ESP_Names = true,
     ESP_Distance = true,
     ESP_Chams = true,
+    ESP_Tracers = false,
+    ESP_Boxes = false,
 
-    -- Noclip types
-    NoclipType = "None", -- "None", "Normal", "Smooth", "MM2"
-
-    -- Fly types
-    FlyType = "None", -- "None", "BodyVelocity", "CFrame", "Smooth"
+    NoclipType = "None",
+    FlyType = "None",
     FlySpeed = 60,
-
     InfiniteJump = false,
     WalkSpeed = 16,
     JumpPower = 50,
@@ -115,7 +127,6 @@ local Features = {
     HitboxExtender = false,
     HitboxSize = 9,
 
-    -- Combat
     Aimbot = false,
     SilentAim = false,
     AimbotFOV = 230,
@@ -128,25 +139,19 @@ local Features = {
     SelectedTarget = nil,
     KillTarget = false,
 
-    -- Carries
     Piggyback = false,
     FrontCarry = false,
     SideCarry = false,
-    BackCarry = false,
 
-    -- Troll
     FlingNearest = false,
     FlingTarget = false,
     FlingAll = false,
     SpinFling = false,
-    RageBait = false,
 
-    -- Self
     Invisible = false,
+    ServerInvisBypass = false,
     GlitchSelf = false,
-    GlitchSpeed = 0.08,
 
-    -- Utility
     CoinFarm = false,
     GrabGun = false,
     TPMurderer = false,
@@ -161,42 +166,40 @@ local RoleColors = {
     Innocent = Color3.fromRGB(40, 225, 70),
 }
 
-local RoleCache = {}
 local ESPObjects = {}
 local BodyVel, BodyGyro = nil, nil
 local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch = 0, 0, 0, 0, 0, 0
 local currentMurderer, currentSheriff = nil, nil
 local PlayerList = {}
-local ConfigName = "ZuzifyStar_Config.json"
 local originalTransparency = {}
+local ConfigName = "ZuzifyStar_Manual.json"
 
 -- ================= CONFIG =================
 local function SaveConfig()
-    local success, err = pcall(function()
+    pcall(function()
         writefile(ConfigName, HttpService:JSONEncode(Features))
+        OrionLib:MakeNotification({
+            Name = "Config",
+            Content = "Saved successfully",
+            Time = 3
+        })
     end)
-    if success then
-        print("[ZuzifyStar] Config saved")
-    else
-        print("[ZuzifyStar] Save failed:", err)
-    end
 end
 
 local function LoadConfig()
-    local success, err = pcall(function()
+    pcall(function()
         if isfile and isfile(ConfigName) then
             local data = HttpService:JSONDecode(readfile(ConfigName))
             for k, v in pairs(data) do
-                if Features[k] ~= nil then
-                    Features[k] = v
-                end
+                if Features[k] ~= nil then Features[k] = v end
             end
-            print("[ZuzifyStar] Config loaded")
+            OrionLib:MakeNotification({
+                Name = "Config",
+                Content = "Loaded successfully",
+                Time = 3
+            })
         end
     end)
-    if not success then
-        print("[ZuzifyStar] Load failed:", err)
-    end
 end
 
 -- ================= ROLE =================
@@ -205,9 +208,9 @@ local function GetRole(plr)
     local function check(tool)
         if not tool or not tool:IsA("Tool") then return nil end
         local n = string.lower(tool.Name)
-        if string.find(n, "knife") or string.find(n, "dagger") or string.find(n, "blade") or string.find(n, "sword") or string.find(n, "scythe") then
+        if string.find(n, "knife") or string.find(n, "dagger") or string.find(n, "blade") or string.find(n, "sword") then
             return "Murderer"
-        elseif string.find(n, "gun") or string.find(n, "revolver") or string.find(n, "pistol") or string.find(n, "rifle") then
+        elseif string.find(n, "gun") or string.find(n, "revolver") or string.find(n, "pistol") then
             return "Sheriff"
         end
         return nil
@@ -313,7 +316,7 @@ local function RefreshESP()
     end
 end
 
--- ================= MOVEMENT HELPERS =================
+-- ================= HELPERS =================
 local function ApplyStats()
     local char = LocalPlayer.Character
     if not char then return end
@@ -327,19 +330,9 @@ end
 local function ApplyNoclip()
     local char = LocalPlayer.Character
     if not char then return end
-
-    if Features.NoclipType == "None" then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-        return
-    end
-
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.CanCollide = false
+            part.CanCollide = (Features.NoclipType == "None")
         end
     end
 end
@@ -349,11 +342,10 @@ local function SetupFly()
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root then return end
-
     if BodyVel then BodyVel:Destroy() end
     if BodyGyro then BodyGyro:Destroy() end
 
-    if Features.FlyType == "BodyVelocity" or Features.FlyType == "Smooth" then
+    if Features.FlyType ~= "None" then
         BodyVel = Instance.new("BodyVelocity")
         BodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
         BodyVel.Velocity = Vector3.zero
@@ -396,15 +388,33 @@ local function SetInvisible(state)
                     originalTransparency[part] = part.Transparency
                 end
                 part.Transparency = 1
+                if part:IsA("BasePart") then
+                    pcall(function() part.LocalTransparencyModifier = 1 end)
+                end
             else
                 if originalTransparency[part] then
                     part.Transparency = originalTransparency[part]
                 end
+                if part:IsA("BasePart") then
+                    pcall(function() part.LocalTransparencyModifier = 0 end)
+                end
             end
         end
     end
-    if not state then
-        table.clear(originalTransparency)
+    if not state then table.clear(originalTransparency) end
+end
+
+-- Server-side invisibility attempt (best effort client methods)
+local function ApplyServerInvisBypass()
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                part.LocalTransparencyModifier = 1
+                part.Transparency = 1
+            end)
+        end
     end
 end
 
@@ -439,10 +449,10 @@ local function Fling(plr, strength)
     if not plr or not plr.Character then return end
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
-    strength = strength or 140
+    strength = strength or 150
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    bv.Velocity = Vector3.new(math.random(-strength, strength), math.random(60, 120), math.random(-strength, strength))
+    bv.Velocity = Vector3.new(math.random(-strength, strength), math.random(70, 130), math.random(-strength, strength))
     bv.Parent = root
     task.delay(0.4, function() if bv then bv:Destroy() end end)
 end
@@ -461,8 +471,6 @@ local function DoCarry(style)
         myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, -2.8)
     elseif style == "Side" then
         myRoot.CFrame = tRoot.CFrame * CFrame.new(2.4, 0.5, 0)
-    elseif style == "Back" then
-        myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0.5, 2.6)
     end
 end
 
@@ -474,6 +482,7 @@ local function OnCharacter(char)
     if Features.FlyType ~= "None" then SetupFly() end
     if Features.HitboxExtender then ApplyHitbox() end
     if Features.Invisible then SetInvisible(true) end
+    if Features.ServerInvisBypass then ApplyServerInvisBypass() end
     if Features.ESP then task.delay(0.35, RefreshESP) end
 end
 
@@ -500,12 +509,11 @@ for _, plr in ipairs(Players:GetPlayers()) do
 end
 
 -- ================= MAIN LOOP =================
-RunService.RenderStepped:Connect(function(dt)
+RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-    -- Role update
     if tick() - lastRole > 1.15 then
         lastRole = tick()
         local mur, sher = nil, nil
@@ -517,18 +525,17 @@ RunService.RenderStepped:Connect(function(dt)
         if Features.RoleNotify then
             if mur and mur ~= currentMurderer then
                 currentMurderer = mur
-                print("[ZuzifyStar] Murderer:", mur.Name)
+                OrionLib:MakeNotification({Name = "Role", Content = "Murderer: " .. mur.Name, Time = 3})
             end
             if sher and sher ~= currentSheriff then
                 currentSheriff = sher
-                print("[ZuzifyStar] Sheriff:", sher.Name)
+                OrionLib:MakeNotification({Name = "Role", Content = "Sheriff: " .. sher.Name, Time = 3})
             end
         end
         currentMurderer = mur
         currentSheriff = sher
     end
 
-    -- ESP live
     if Features.ESP and root then
         for plr, objs in pairs(ESPObjects) do
             if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -557,22 +564,9 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Noclip types
-    if Features.NoclipType ~= "None" then
-        ApplyNoclip()
-        if Features.NoclipType == "Smooth" and root then
-            -- slight velocity assist so you don’t get stuck
-            if root.AssemblyLinearVelocity.Magnitude < 2 then
-                root.AssemblyLinearVelocity = root.AssemblyLinearVelocity + Vector3.new(0, 0.1, 0)
-            end
-        elseif Features.NoclipType == "MM2" and root then
-            -- stronger push for MM2 maps
-            root.AssemblyLinearVelocity = root.AssemblyLinearVelocity * 0.96
-        end
-    end
+    if Features.NoclipType ~= "None" then ApplyNoclip() end
 
-    -- Fly types
-    if Features.FlyType ~= "None" and root then
+    if Features.FlyType ~= "None" and root and BodyVel and BodyGyro then
         local cam = Camera.CFrame
         local dir = Vector3.zero
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
@@ -581,18 +575,9 @@ RunService.RenderStepped:Connect(function(dt)
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
-
         if dir.Magnitude > 0 then dir = dir.Unit * Features.FlySpeed end
-
-        if Features.FlyType == "BodyVelocity" or Features.FlyType == "Smooth" then
-            if BodyVel and BodyGyro then
-                BodyVel.Velocity = dir
-                BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
-            end
-        elseif Features.FlyType == "CFrame" then
-            root.CFrame = root.CFrame + dir * dt * 1.1
-            root.AssemblyLinearVelocity = Vector3.zero
-        end
+        BodyVel.Velocity = dir
+        BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
     end
 
     if Features.InfiniteJump and hum and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
@@ -610,7 +595,10 @@ RunService.RenderStepped:Connect(function(dt)
 
     if Features.HitboxExtender then ApplyHitbox() end
 
-    -- Aimbot / Silent
+    if Features.ServerInvisBypass then
+        ApplyServerInvisBypass()
+    end
+
     if (Features.Aimbot or Features.SilentAim) and root then
         local targetPlr = GetClosestPlayer(Features.AimbotFOV)
         if targetPlr and targetPlr.Character then
@@ -626,13 +614,10 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Carries
     if Features.Piggyback then DoCarry("Piggyback") end
     if Features.FrontCarry then DoCarry("Front") end
     if Features.SideCarry then DoCarry("Side") end
-    if Features.BackCarry then DoCarry("Back") end
 
-    -- Combat
     if Features.KnifeAura and root then
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
@@ -663,45 +648,37 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Troll / Fling
     if Features.FlingNearest and tick() - lastFling > 0.75 then
         lastFling = tick()
         local closest = GetClosestPlayer(55)
-        if closest then Fling(closest, 160) end
+        if closest then Fling(closest) end
     end
     if Features.FlingTarget and Features.SelectedTarget and tick() - lastFling > 0.55 then
         lastFling = tick()
         local target = Players:FindFirstChild(Features.SelectedTarget)
-        if target then Fling(target, 180) end
+        if target then Fling(target) end
     end
     if Features.FlingAll and tick() - lastFling > 1.1 then
         lastFling = tick()
         for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then Fling(plr, 130) end
+            if plr ~= LocalPlayer then Fling(plr) end
         end
     end
-    if Features.SpinFling and root then
-        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(25), 0)
-    end
 
-    -- Glitch Self
-    if Features.GlitchSelf and char and tick() - lastGlitch > Features.GlitchSpeed then
+    if Features.GlitchSelf and char and tick() - lastGlitch > 0.09 then
         lastGlitch = tick()
-        SetInvisible(not Features.Invisible)
-        task.delay(Features.GlitchSpeed * 0.6, function()
-            if Features.GlitchSelf then
-                SetInvisible(Features.Invisible)
-            end
+        SetInvisible(true)
+        task.delay(0.06, function()
+            if Features.GlitchSelf then SetInvisible(Features.Invisible) end
         end)
     end
 
-    -- Utility
     if Features.CoinFarm and root and tick() - lastFarm > 0.9 then
         lastFarm = tick()
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") then
                 local n = string.lower(obj.Name)
-                if string.find(n, "coin") or string.find(n, "money") or string.find(n, "cash") then
+                if string.find(n, "coin") or string.find(n, "money") then
                     if (root.Position - obj.Position).Magnitude < 160 then
                         root.CFrame = CFrame.new(obj.Position + Vector3.new(0, 3.2, 0))
                         break
@@ -742,125 +719,109 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- ================= UI =================
-local Home = Window:Tab("Home")
-local homeSec = Home:Section("Welcome")
-homeSec:Label("ZuzifyStar is ready")
-homeSec:Label("Password protected + Owner system")
-if isOwner then homeSec:Label("OWNER MODE ACTIVE") end
+-- ================= UI (ORION) =================
+local HomeTab = Window:MakeTab({Name = "Home", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+HomeTab:AddParagraph("ZuzifyStar", "Loaded successfully\nPassword protected\nOwner + Beta system active")
+if isOwner then
+    HomeTab:AddLabel("OWNER ACCESS GRANTED")
+end
+if hasBeta then
+    HomeTab:AddLabel("BETA UNLOCKED")
+else
+    HomeTab:AddLabel("Beta locked - Buy gamepass 1944876349")
+end
 
-local Visuals = Window:Tab("Visuals")
-local espSec = Visuals:Section("ESP")
-espSec:Toggle("Enable ESP", function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end end)
-espSec:Toggle("Names + Role", function(v) Features.ESP_Names = v RefreshESP() end)
-espSec:Toggle("Distance", function(v) Features.ESP_Distance = v end)
-espSec:Toggle("Chams", function(v) Features.ESP_Chams = v RefreshESP() end)
-espSec:Button("Refresh ESP", RefreshESP)
-espSec:Button("Clear ESP", function() ClearAllESP() Features.ESP = false end)
+local VisualsTab = Window:MakeTab({Name = "Visuals", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+VisualsTab:AddToggle({Name = "Enable ESP", Default = false, Callback = function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end end})
+VisualsTab:AddToggle({Name = "Names + Role", Default = true, Callback = function(v) Features.ESP_Names = v RefreshESP() end})
+VisualsTab:AddToggle({Name = "Distance", Default = true, Callback = function(v) Features.ESP_Distance = v end})
+VisualsTab:AddToggle({Name = "Chams", Default = true, Callback = function(v) Features.ESP_Chams = v RefreshESP() end})
+VisualsTab:AddButton({Name = "Refresh ESP", Callback = RefreshESP})
+VisualsTab:AddButton({Name = "Clear ESP", Callback = function() ClearAllESP() Features.ESP = false end})
 
-local Movement = Window:Tab("Movement")
-local noclipSec = Movement:Section("Noclip Types")
-noclipSec:DropDown("Noclip Type", {"None", "Normal", "Smooth", "MM2"}, function(v)
-    Features.NoclipType = v
-    ApplyNoclip()
-end)
+local MovementTab = Window:MakeTab({Name = "Movement", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+MovementTab:AddDropdown({Name = "Noclip Type", Default = "None", Options = {"None", "Normal", "Smooth", "MM2"}, Callback = function(v) Features.NoclipType = v ApplyNoclip() end})
+MovementTab:AddDropdown({Name = "Fly Type", Default = "None", Options = {"None", "BodyVelocity", "Smooth"}, Callback = function(v) Features.FlyType = v if v == "None" then CleanupFly() else SetupFly() end end})
+MovementTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 200, Default = 60, Callback = function(v) Features.FlySpeed = v end})
+MovementTab:AddToggle({Name = "Infinite Jump", Default = false, Callback = function(v) Features.InfiniteJump = v end})
+MovementTab:AddSlider({Name = "Walk Speed", Min = 10, Max = 200, Default = 16, Callback = function(v) Features.WalkSpeed = v ApplyStats() end})
+MovementTab:AddSlider({Name = "Jump Power", Min = 30, Max = 200, Default = 50, Callback = function(v) Features.JumpPower = v ApplyStats() end})
+MovementTab:AddToggle({Name = "Anti Fling", Default = true, Callback = function(v) Features.AntiFling = v end})
+MovementTab:AddToggle({Name = "Anti Die", Default = false, Callback = function(v) Features.AntiDie = v end})
+MovementTab:AddToggle({Name = "Hitbox Extender", Default = false, Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end})
+MovementTab:AddSlider({Name = "Hitbox Size", Min = 3, Max = 22, Default = 9, Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end end})
+MovementTab:AddToggle({Name = "Anti AFK", Default = true, Callback = function(v) Features.AntiAFK = v end})
 
-local flySec = Movement:Section("Fly Types")
-flySec:DropDown("Fly Type", {"None", "BodyVelocity", "CFrame", "Smooth"}, function(v)
-    Features.FlyType = v
-    if v == "None" then CleanupFly() else SetupFly() end
-end)
-flySec:Slider("Fly Speed", 10, 200, function(v) Features.FlySpeed = v end)
-
-local movSec = Movement:Section("Other")
-movSec:Toggle("Infinite Jump", function(v) Features.InfiniteJump = v end)
-movSec:Slider("Walk Speed", 10, 200, function(v) Features.WalkSpeed = v ApplyStats() end)
-movSec:Slider("Jump Power", 30, 200, function(v) Features.JumpPower = v ApplyStats() end)
-movSec:Toggle("Anti Fling", function(v) Features.AntiFling = v end)
-movSec:Toggle("Anti Die", function(v) Features.AntiDie = v end)
-movSec:Toggle("Hitbox Extender", function(v) Features.HitboxExtender = v ApplyHitbox() end)
-movSec:Slider("Hitbox Size", 3, 22, function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end end)
-movSec:Toggle("Anti AFK", function(v) Features.AntiAFK = v end)
-
-local Combat = Window:Tab("Combat")
-local aimSec = Combat:Section("Aimbot")
-aimSec:Toggle("Aimbot", function(v) Features.Aimbot = v end)
-aimSec:Toggle("Silent Aim", function(v) Features.SilentAim = v end)
-aimSec:Slider("FOV", 50, 400, function(v) Features.AimbotFOV = v end)
-aimSec:Slider("Smoothness", 5, 40, function(v) Features.AimbotSmooth = v / 100 end)
-aimSec:DropDown("Aim Part", {"HumanoidRootPart", "Head", "UpperTorso"}, function(v) Features.AimPart = v end)
-
-local combatSec = Combat:Section("Kill / Target")
-combatSec:Toggle("Auto Kill", function(v) Features.AutoKill = v end)
-combatSec:Toggle("Knife Aura", function(v) Features.KnifeAura = v end)
-combatSec:Slider("Aura Range", 6, 30, function(v) Features.AuraRange = v end)
-combatSec:DropDown("Select Player", PlayerList, function(v) Features.SelectedTarget = v end)
-combatSec:Button("Refresh Players", function()
+local CombatTab = Window:MakeTab({Name = "Combat", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+CombatTab:AddToggle({Name = "Aimbot", Default = false, Callback = function(v) Features.Aimbot = v end})
+CombatTab:AddToggle({Name = "Silent Aim", Default = false, Callback = function(v) Features.SilentAim = v end})
+CombatTab:AddSlider({Name = "FOV", Min = 50, Max = 400, Default = 230, Callback = function(v) Features.AimbotFOV = v end})
+CombatTab:AddSlider({Name = "Smoothness", Min = 5, Max = 40, Default = 13, Callback = function(v) Features.AimbotSmooth = v / 100 end})
+CombatTab:AddDropdown({Name = "Aim Part", Default = "HumanoidRootPart", Options = {"HumanoidRootPart", "Head", "UpperTorso"}, Callback = function(v) Features.AimPart = v end})
+CombatTab:AddToggle({Name = "Auto Kill", Default = false, Callback = function(v) Features.AutoKill = v end})
+CombatTab:AddToggle({Name = "Knife Aura", Default = false, Callback = function(v) Features.KnifeAura = v end})
+CombatTab:AddSlider({Name = "Aura Range", Min = 6, Max = 30, Default = 15, Callback = function(v) Features.AuraRange = v end})
+CombatTab:AddDropdown({Name = "Select Player", Default = "None", Options = PlayerList, Callback = function(v) Features.SelectedTarget = v end})
+CombatTab:AddButton({Name = "Refresh Players", Callback = function()
     PlayerList = {}
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
     end
-end)
-combatSec:Toggle("Kill Selected", function(v) Features.KillTarget = v end)
+end})
+CombatTab:AddToggle({Name = "Kill Selected", Default = false, Callback = function(v) Features.KillTarget = v end})
 
-local Carry = Window:Tab("Carry")
-local carrySec = Carry:Section("Carry Styles")
-carrySec:Toggle("Piggyback", function(v) Features.Piggyback = v end)
-carrySec:Toggle("Front Carry", function(v) Features.FrontCarry = v end)
-carrySec:Toggle("Side Carry", function(v) Features.SideCarry = v end)
-carrySec:Toggle("Back Carry", function(v) Features.BackCarry = v end)
+local CarryTab = Window:MakeTab({Name = "Carry", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+CarryTab:AddToggle({Name = "Piggyback", Default = false, Callback = function(v) Features.Piggyback = v end})
+CarryTab:AddToggle({Name = "Front Carry", Default = false, Callback = function(v) Features.FrontCarry = v end})
+CarryTab:AddToggle({Name = "Side Carry", Default = false, Callback = function(v) Features.SideCarry = v end})
 
-local Troll = Window:Tab("Troll")
-local flingSec = Troll:Section("Fling")
-flingSec:Toggle("Fling Nearest", function(v) Features.FlingNearest = v end)
-flingSec:Toggle("Fling Selected", function(v) Features.FlingTarget = v end)
-flingSec:Toggle("Fling All", function(v) Features.FlingAll = v end)
-flingSec:Toggle("Spin Fling", function(v) Features.SpinFling = v end)
+local TrollTab = Window:MakeTab({Name = "Troll", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+TrollTab:AddToggle({Name = "Fling Nearest", Default = false, Callback = function(v) Features.FlingNearest = v end})
+TrollTab:AddToggle({Name = "Fling Selected", Default = false, Callback = function(v) Features.FlingTarget = v end})
+TrollTab:AddToggle({Name = "Fling All", Default = false, Callback = function(v) Features.FlingAll = v end})
+TrollTab:AddToggle({Name = "Spin Fling", Default = false, Callback = function(v) Features.SpinFling = v end})
 
-local rageSec = Troll:Section("Ragebait / Fun")
-rageSec:Toggle("Ragebait Mode", function(v) Features.RageBait = v end)
-rageSec:Button("Fake Thanks", function()
-    print("[ZuzifyStar] Thanks for playing! (client)")
-end)
-rageSec:Button("Glitch Flash Once", function()
-    SetInvisible(true)
-    task.wait(0.12)
-    SetInvisible(false)
-end)
+local SelfTab = Window:MakeTab({Name = "Self", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+SelfTab:AddToggle({Name = "Invisible", Default = false, Callback = function(v) Features.Invisible = v SetInvisible(v) end})
+SelfTab:AddToggle({Name = "Server Invis Bypass (Attempt)", Default = false, Callback = function(v) Features.ServerInvisBypass = v if v then ApplyServerInvisBypass() end end})
+SelfTab:AddToggle({Name = "Glitch Self", Default = false, Callback = function(v) Features.GlitchSelf = v end})
 
-local Self = Window:Tab("Self")
-local selfSec = Self:Section("Visual")
-selfSec:Toggle("Invisible", function(v)
-    Features.Invisible = v
-    SetInvisible(v)
-end)
-selfSec:Toggle("Glitch Self (Flash)", function(v) Features.GlitchSelf = v end)
-selfSec:Slider("Glitch Speed", 3, 20, function(v) Features.GlitchSpeed = v / 100 end)
+local UtilityTab = Window:MakeTab({Name = "Utility", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+UtilityTab:AddToggle({Name = "Coin Farm", Default = false, Callback = function(v) Features.CoinFarm = v end})
+UtilityTab:AddToggle({Name = "Grab Gun", Default = false, Callback = function(v) Features.GrabGun = v end})
+UtilityTab:AddToggle({Name = "TP to Murderer", Default = false, Callback = function(v) Features.TPMurderer = v end})
+UtilityTab:AddToggle({Name = "TP to Sheriff", Default = false, Callback = function(v) Features.TPSheriff = v end})
+UtilityTab:AddToggle({Name = "Role Notify", Default = true, Callback = function(v) Features.RoleNotify = v end})
 
-local Utility = Window:Tab("Utility")
-local utilSec = Utility:Section("Farm")
-utilSec:Toggle("Coin Farm", function(v) Features.CoinFarm = v end)
-utilSec:Toggle("Grab Gun", function(v) Features.GrabGun = v end)
-utilSec:Toggle("TP to Murderer", function(v) Features.TPMurderer = v end)
-utilSec:Toggle("TP to Sheriff", function(v) Features.TPSheriff = v end)
-utilSec:Toggle("Role Notify", function(v) Features.RoleNotify = v end)
+local TeleportsTab = Window:MakeTab({Name = "Teleports", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+TeleportsTab:AddButton({Name = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end})
+TeleportsTab:AddButton({Name = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end})
+TeleportsTab:AddButton({Name = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end})
+TeleportsTab:AddButton({Name = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end})
+TeleportsTab:AddButton({Name = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end})
 
-local Teleports = Window:Tab("Teleports")
-local tpSec = Teleports:Section("Presets")
-tpSec:Button("Lobby", function() Teleport(Vector3.new(0, 10, 0)) end)
-tpSec:Button("Arena", function() Teleport(Vector3.new(0, 5, 50)) end)
-tpSec:Button("Bank", function() Teleport(Vector3.new(0, 5, 0)) end)
-tpSec:Button("Hotel", function() Teleport(Vector3.new(50, 5, 0)) end)
-tpSec:Button("Hospital", function() Teleport(Vector3.new(-50, 5, 0)) end)
+-- BETA TAB
+local BetaTab = Window:MakeTab({Name = "Beta", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+if hasBeta then
+    BetaTab:AddParagraph("Beta Unlocked", "You own the Beta gamepass (or are Owner).\nExtra experimental features can be added here.")
+    BetaTab:AddLabel("Thanks for supporting!")
+else
+    BetaTab:AddParagraph("Beta Locked", "To unlock the Beta page and features you need to buy the gamepass.\n\nGamepass ID: 1944876349")
+    BetaTab:AddButton({
+        Name = "Open Gamepass Page",
+        Callback = function()
+            pcall(function()
+                MarketplaceService:PromptGamePassPurchase(LocalPlayer, BETA_GAMEPASS_ID)
+            end)
+        end
+    })
+end
 
-local Settings = Window:Tab("Settings")
-local confSec = Settings:Section("Config")
-confSec:Button("Save Config", SaveConfig)
-confSec:Button("Load Config", LoadConfig)
-
-local serverSec = Settings:Section("Server")
-serverSec:Button("Rejoin", function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
-serverSec:Button("Server Hop", function()
+local SettingsTab = Window:MakeTab({Name = "Settings", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+SettingsTab:AddButton({Name = "Save Config", Callback = SaveConfig})
+SettingsTab:AddButton({Name = "Load Config", Callback = LoadConfig})
+SettingsTab:AddButton({Name = "Rejoin", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end})
+SettingsTab:AddButton({Name = "Server Hop", Callback = function()
     pcall(function()
         local data = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
         local list = {}
@@ -873,9 +834,15 @@ serverSec:Button("Server Hop", function()
             TeleportService:TeleportToPlaceInstance(game.PlaceId, list[math.random(1, #list)], LocalPlayer)
         end
     end)
-end)
+end})
 
--- Load config on start
+OrionLib:Init()
 LoadConfig()
 
-print("ZuzifyStar loaded | Owner: " .. tostring(isOwner))
+OrionLib:MakeNotification({
+    Name = "ZuzifyStar",
+    Content = "Loaded successfully" .. (hasBeta and " | Beta Unlocked" or ""),
+    Time = 5
+})
+
+print("ZuzifyStar loaded | Owner:", isOwner, "| Beta:", hasBeta)
