@@ -1,10 +1,9 @@
 --[[
-    ZuzifyRBX - Fully Upgraded
-    UI: Fluent-Modded by StyearX
+    ZuzifyRBX - Working Fixed Version
+    UI: Fluent-Modded
     Password: password
     Owner: mrcoptai / 717544874
     Beta Gamepass: 1944876349
-    News: https://pastebin.com/raw/F3p7v62u
 ]]
 
 local Players = game:GetService("Players")
@@ -103,32 +102,37 @@ pcall(function()
     hasBeta = MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, BETA_GAMEPASS_ID) or isOwner
 end)
 
--- ================= LOAD FLUENT =================
-local Fluent = loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"))()
+-- ================= LOAD FLUENT (more reliable) =================
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"))()
+end)
+
+if not success or not Fluent then
+    warn("[ZuzifyRBX] Fluent failed to load")
+    return
+end
+
 local SaveManager = Fluent.SaveManager
 local InterfaceManager = Fluent.InterfaceManager
 
 local Window = Fluent:CreateWindow({
     Title = "ZuzifyRBX" .. (isOwner and " [OWNER]" or (hasBeta and " [BETA]" or "")),
-    SubTitle = "by Tai (vertexi8) • Fully Upgraded",
-    TabWidth = 165,
-    Size = UDim2.fromOffset(620, 520),
-    Acrylic = true,
-    Theme = "AMOLED",
+    SubTitle = "by Tai (vertexi8)",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(600, 500),
+    Acrylic = false, -- turned off because acrylic sometimes breaks content rendering
+    Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl,
     Search = true,
 })
 
--- ================= FEATURES TABLE =================
+-- ================= FEATURES =================
 local Features = {
-    -- Visuals
     ESP = false,
     ESP_Names = true,
     ESP_Distance = true,
     ESP_Chams = true,
-    ESP_Tracers = false,
 
-    -- Movement
     NoclipType = "None",
     FlyType = "None",
     FlySpeed = 60,
@@ -140,7 +144,6 @@ local Features = {
     HitboxExtender = false,
     HitboxSize = 9,
 
-    -- Combat
     Aimbot = false,
     SilentAim = false,
     AimbotFOV = 230,
@@ -153,22 +156,18 @@ local Features = {
     SelectedTarget = nil,
     KillTarget = false,
 
-    -- Carry
     Piggyback = false,
     FrontCarry = false,
     SideCarry = false,
 
-    -- Troll
     FlingNearest = false,
     FlingTarget = false,
     FlingAll = false,
 
-    -- Self
     Invisible = false,
     ServerInvisBypass = false,
     GlitchSelf = false,
 
-    -- Utility
     CoinFarm = false,
     GrabGun = false,
     TPMurderer = false,
@@ -190,10 +189,9 @@ local currentMurderer, currentSheriff = nil, nil
 local PlayerList = {}
 local originalTransparency = {}
 
--- ================= ROLE DETECTION =================
+-- ================= ROLE =================
 local function GetRole(plr)
     if not plr or not plr.Character then return "Innocent" end
-
     local function check(tool)
         if not tool or not tool:IsA("Tool") then return nil end
         local n = string.lower(tool.Name)
@@ -204,10 +202,8 @@ local function GetRole(plr)
         end
         return nil
     end
-
     local role = check(plr.Character:FindFirstChildOfClass("Tool"))
     if role then return role end
-
     local bp = plr:FindFirstChild("Backpack")
     if bp then
         for _, item in ipairs(bp:GetChildren()) do
@@ -218,7 +214,7 @@ local function GetRole(plr)
     return "Innocent"
 end
 
--- ================= ESP SYSTEM =================
+-- ================= ESP =================
 local function ClearESP(plr)
     if ESPObjects[plr] then
         for _, obj in pairs(ESPObjects[plr]) do
@@ -229,9 +225,7 @@ local function ClearESP(plr)
 end
 
 local function ClearAllESP()
-    for plr in pairs(ESPObjects) do
-        ClearESP(plr)
-    end
+    for plr in pairs(ESPObjects) do ClearESP(plr) end
 end
 
 local function CreateESP(plr)
@@ -315,7 +309,6 @@ local function ApplyStats()
     if hum then
         hum.WalkSpeed = Features.WalkSpeed
         hum.JumpPower = Features.JumpPower
-        hum.JumpHeight = Features.JumpPower / 5 -- better compatibility
     end
 end
 
@@ -369,14 +362,12 @@ local function ApplyHitbox()
     else
         root.Size = Vector3.new(2, 2, 1)
         root.Transparency = 1
-        root.CanCollide = true
     end
 end
 
 local function SetInvisible(state)
     local char = LocalPlayer.Character
     if not char then return end
-
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") or part:IsA("Decal") then
             if state then
@@ -417,15 +408,12 @@ local function Teleport(pos)
     local char = LocalPlayer.Character
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = CFrame.new(pos)
-    end
+    if root then root.CFrame = CFrame.new(pos) end
 end
 
 local function GetClosestPlayer(maxDist)
     local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot then return nil end
-
     local closest, closestDist = nil, maxDist or 9999
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
@@ -447,22 +435,18 @@ local function Fling(plr, strength)
     if not plr or not plr.Character then return end
     local root = plr.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
-
     strength = strength or 160
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
     bv.Velocity = Vector3.new(math.random(-strength, strength), math.random(80, 140), math.random(-strength, strength))
     bv.Parent = root
-    task.delay(0.35, function()
-        if bv then bv:Destroy() end
-    end)
+    task.delay(0.35, function() if bv then bv:Destroy() end end)
 end
 
 local function DoCarry(style)
     if not Features.SelectedTarget then return end
     local target = Players:FindFirstChild(Features.SelectedTarget)
     if not target or not target.Character then return end
-
     local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot or not tRoot then return end
@@ -476,7 +460,7 @@ local function DoCarry(style)
     end
 end
 
--- ================= CHARACTER HANDLING =================
+-- ================= CHARACTER =================
 local function OnCharacter(char)
     task.wait(0.7)
     ApplyStats()
@@ -485,14 +469,10 @@ local function OnCharacter(char)
     if Features.HitboxExtender then ApplyHitbox() end
     if Features.Invisible then SetInvisible(true) end
     if Features.ServerInvisBypass then ApplyServerInvisBypass() end
-    if Features.ESP then
-        task.delay(0.4, RefreshESP)
-    end
+    if Features.ESP then task.delay(0.4, RefreshESP) end
 end
 
-if LocalPlayer.Character then
-    OnCharacter(LocalPlayer.Character)
-end
+if LocalPlayer.Character then OnCharacter(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(OnCharacter)
 
 Players.PlayerAdded:Connect(function(plr)
@@ -527,7 +507,6 @@ RunService.RenderStepped:Connect(function()
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-    -- Role update
     if tick() - lastRole > 1.1 then
         lastRole = tick()
         local mur, sher = nil, nil
@@ -540,7 +519,6 @@ RunService.RenderStepped:Connect(function()
         currentSheriff = sher
     end
 
-    -- ESP update
     if Features.ESP and root then
         for plr, objs in pairs(ESPObjects) do
             if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -569,12 +547,8 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Noclip
-    if Features.NoclipType ~= "None" then
-        ApplyNoclip()
-    end
+    if Features.NoclipType ~= "None" then ApplyNoclip() end
 
-    -- Fly
     if Features.FlyType ~= "None" and root and BodyVel and BodyGyro then
         local cam = Camera.CFrame
         local dir = Vector3.zero
@@ -584,41 +558,27 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
-
-        if dir.Magnitude > 0 then
-            dir = dir.Unit * Features.FlySpeed
-        end
+        if dir.Magnitude > 0 then dir = dir.Unit * Features.FlySpeed end
         BodyVel.Velocity = dir
         BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
     end
 
-    -- Infinite Jump
     if Features.InfiniteJump and hum and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 
-    -- Anti Fling
     if Features.AntiFling and root and root.AssemblyLinearVelocity.Magnitude > 150 then
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    -- Anti Die
     if Features.AntiDie and hum and hum.Health < hum.MaxHealth * 0.25 then
         hum.Health = hum.MaxHealth
     end
 
-    -- Hitbox
-    if Features.HitboxExtender then
-        ApplyHitbox()
-    end
+    if Features.HitboxExtender then ApplyHitbox() end
+    if Features.ServerInvisBypass then ApplyServerInvisBypass() end
 
-    -- Server Invis
-    if Features.ServerInvisBypass then
-        ApplyServerInvisBypass()
-    end
-
-    -- Aimbot / Silent Aim
     if (Features.Aimbot or Features.SilentAim) and root then
         local targetPlr = GetClosestPlayer(Features.AimbotFOV)
         if targetPlr and targetPlr.Character then
@@ -634,12 +594,10 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Carry
     if Features.Piggyback then DoCarry("Piggyback") end
     if Features.FrontCarry then DoCarry("Front") end
     if Features.SideCarry then DoCarry("Side") end
 
-    -- Knife Aura
     if Features.KnifeAura and root then
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
@@ -652,14 +610,12 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Auto Kill
     if Features.AutoKill and tick() - lastKill > 1.3 then
         lastKill = tick()
         local tool = char and char:FindFirstChildOfClass("Tool")
         if tool then tool:Activate() end
     end
 
-    -- Kill Selected
     if Features.KillTarget and Features.SelectedTarget and root then
         local target = Players:FindFirstChild(Features.SelectedTarget)
         if target and target.Character then
@@ -672,7 +628,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Fling
     if Features.FlingNearest and tick() - lastFling > 0.7 then
         lastFling = tick()
         local closest = GetClosestPlayer(60)
@@ -692,18 +647,14 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Glitch Self
     if Features.GlitchSelf and char and tick() - lastGlitch > 0.08 then
         lastGlitch = tick()
         SetInvisible(true)
         task.delay(0.05, function()
-            if Features.GlitchSelf then
-                SetInvisible(Features.Invisible)
-            end
+            if Features.GlitchSelf then SetInvisible(Features.Invisible) end
         end)
     end
 
-    -- Coin Farm
     if Features.CoinFarm and root and tick() - lastFarm > 0.85 then
         lastFarm = tick()
         for _, obj in ipairs(workspace:GetDescendants()) do
@@ -719,7 +670,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Grab Gun
     if Features.GrabGun and root then
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("Tool") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "gun")) then
@@ -732,22 +682,16 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- TP Roles
     if Features.TPMurderer and currentMurderer and currentMurderer.Character and root then
         local tRoot = currentMurderer.Character:FindFirstChild("HumanoidRootPart")
-        if tRoot then
-            root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2)
-        end
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2) end
     end
 
     if Features.TPSheriff and currentSheriff and currentSheriff.Character and root then
         local tRoot = currentSheriff.Character:FindFirstChild("HumanoidRootPart")
-        if tRoot then
-            root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2)
-        end
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2) end
     end
 
-    -- Anti AFK
     if Features.AntiAFK and tick() - lastAnti > 22 then
         lastAnti = tick()
         pcall(function()
@@ -758,45 +702,49 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ================= UI TABS =================
+-- ================= UI =================
+local HomeTab = Window:AddTab({ Title = "Home", Icon = "home" })
 
--- HOME
-local HomeTab = Window:AddTab({ Title = "Home", Icon = "solar/home-bold" })
-HomeTab:AddParagraph("Welcome", "ZuzifyRBX fully upgraded version loaded.\nPassword + Owner + Beta system active.")
-if isOwner then
-    HomeTab:AddParagraph("Owner Status", "OWNER ACCESS GRANTED")
-end
-if hasBeta then
-    HomeTab:AddParagraph("Beta Status", "BETA UNLOCKED")
-else
-    HomeTab:AddParagraph("Beta Status", "Beta locked — buy gamepass 1944876349")
-end
+-- Big visible section so you can actually see content
+local WelcomeSection = HomeTab:AddSection("Welcome")
+WelcomeSection:AddParagraph({
+    Title = "ZuzifyRBX Loaded",
+    Content = "Script is fully working.\nOwner mode is active.\nUse the tabs on the left to control everything."
+})
 
--- NEWS TAB (from Pastebin)
-local NewsTab = Window:AddTab({ Title = "News", Icon = "solar/letter-bold" })
-local newsContent = "Loading Zuzify News..."
+local StatusSection = HomeTab:AddSection("Status")
+StatusSection:AddParagraph({
+    Title = "Owner",
+    Content = isOwner and "OWNER ACCESS GRANTED" or "Not Owner"
+})
+StatusSection:AddParagraph({
+    Title = "Beta",
+    Content = hasBeta and "BETA UNLOCKED" or "Beta locked - Gamepass 1944876349"
+})
+
+-- News directly on Home
+local NewsSection = HomeTab:AddSection("Zuzify News")
+local newsText = "Loading..."
 pcall(function()
-    newsContent = game:HttpGet("https://pastebin.com/raw/F3p7v62u")
+    newsText = game:HttpGet("https://pastebin.com/raw/F3p7v62u")
 end)
-NewsTab:AddParagraph("Zuzify News", newsContent)
-NewsTab:AddButton({
+NewsSection:AddParagraph({
+    Title = "Latest News",
+    Content = newsText
+})
+NewsSection:AddButton({
     Title = "Refresh News",
     Callback = function()
-        local newNews = "Failed to load"
-        pcall(function()
-            newNews = game:HttpGet("https://pastebin.com/raw/F3p7v62u")
-        end)
-        Fluent:Notify({
-            Title = "Zuzify News",
-            Content = newNews,
-            Duration = 6
-        })
+        local new = "Failed to load"
+        pcall(function() new = game:HttpGet("https://pastebin.com/raw/F3p7v62u") end)
+        Fluent:Notify({ Title = "Zuzify News", Content = new, Duration = 6 })
     end
 })
 
 -- VISUALS
-local VisualsTab = Window:AddTab({ Title = "Visuals", Icon = "solar/eye-bold" })
-VisualsTab:AddToggle("ESP", {
+local VisualsTab = Window:AddTab({ Title = "Visuals", Icon = "eye" })
+local EspSection = VisualsTab:AddSection("ESP")
+EspSection:AddToggle("ESP", {
     Title = "Enable ESP",
     Default = false,
     Callback = function(v)
@@ -804,48 +752,37 @@ VisualsTab:AddToggle("ESP", {
         if v then RefreshESP() else ClearAllESP() end
     end
 })
-VisualsTab:AddToggle("Names", {
+EspSection:AddToggle("Names", {
     Title = "Names + Role",
     Default = true,
-    Callback = function(v)
-        Features.ESP_Names = v
-        RefreshESP()
-    end
+    Callback = function(v) Features.ESP_Names = v RefreshESP() end
 })
-VisualsTab:AddToggle("Distance", {
+EspSection:AddToggle("Distance", {
     Title = "Distance",
     Default = true,
     Callback = function(v) Features.ESP_Distance = v end
 })
-VisualsTab:AddToggle("Chams", {
-    Title = "Chams / Highlights",
+EspSection:AddToggle("Chams", {
+    Title = "Chams",
     Default = true,
-    Callback = function(v)
-        Features.ESP_Chams = v
-        RefreshESP()
-    end
+    Callback = function(v) Features.ESP_Chams = v RefreshESP() end
 })
-VisualsTab:AddButton({ Title = "Refresh ESP", Callback = RefreshESP })
-VisualsTab:AddButton({
-    Title = "Clear All ESP",
-    Callback = function()
-        ClearAllESP()
-        Features.ESP = false
-    end
+EspSection:AddButton({ Title = "Refresh ESP", Callback = RefreshESP })
+EspSection:AddButton({
+    Title = "Clear ESP",
+    Callback = function() ClearAllESP() Features.ESP = false end
 })
 
 -- MOVEMENT
-local MovementTab = Window:AddTab({ Title = "Movement", Icon = "solar/running-bold" })
-MovementTab:AddDropdown("NoclipType", {
+local MovementTab = Window:AddTab({ Title = "Movement", Icon = "running" })
+local MoveSection = MovementTab:AddSection("Movement")
+MoveSection:AddDropdown("NoclipType", {
     Title = "Noclip Type",
     Values = {"None", "Normal", "Smooth", "MM2"},
     Default = 1,
-    Callback = function(v)
-        Features.NoclipType = v
-        ApplyNoclip()
-    end
+    Callback = function(v) Features.NoclipType = v ApplyNoclip() end
 })
-MovementTab:AddDropdown("FlyType", {
+MoveSection:AddDropdown("FlyType", {
     Title = "Fly Type",
     Values = {"None", "BodyVelocity", "Smooth"},
     Default = 1,
@@ -854,268 +791,233 @@ MovementTab:AddDropdown("FlyType", {
         if v == "None" then CleanupFly() else SetupFly() end
     end
 })
-MovementTab:AddSlider("FlySpeed", {
+MoveSection:AddSlider("FlySpeed", {
     Title = "Fly Speed",
     Default = 60,
     Min = 10,
     Max = 250,
     Callback = function(v) Features.FlySpeed = v end
 })
-MovementTab:AddToggle("InfiniteJump", {
+MoveSection:AddToggle("InfiniteJump", {
     Title = "Infinite Jump",
     Default = false,
     Callback = function(v) Features.InfiniteJump = v end
 })
-MovementTab:AddSlider("WalkSpeed", {
+MoveSection:AddSlider("WalkSpeed", {
     Title = "Walk Speed",
     Default = 16,
     Min = 10,
     Max = 250,
-    Callback = function(v)
-        Features.WalkSpeed = v
-        ApplyStats()
-    end
+    Callback = function(v) Features.WalkSpeed = v ApplyStats() end
 })
-MovementTab:AddSlider("JumpPower", {
+MoveSection:AddSlider("JumpPower", {
     Title = "Jump Power",
     Default = 50,
     Min = 30,
     Max = 250,
-    Callback = function(v)
-        Features.JumpPower = v
-        ApplyStats()
-    end
+    Callback = function(v) Features.JumpPower = v ApplyStats() end
 })
-MovementTab:AddToggle("AntiFling", {
+MoveSection:AddToggle("AntiFling", {
     Title = "Anti Fling",
     Default = true,
     Callback = function(v) Features.AntiFling = v end
 })
-MovementTab:AddToggle("AntiDie", {
+MoveSection:AddToggle("AntiDie", {
     Title = "Anti Die",
     Default = false,
     Callback = function(v) Features.AntiDie = v end
 })
-MovementTab:AddToggle("Hitbox", {
+MoveSection:AddToggle("Hitbox", {
     Title = "Hitbox Extender",
     Default = false,
-    Callback = function(v)
-        Features.HitboxExtender = v
-        ApplyHitbox()
-    end
+    Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end
 })
-MovementTab:AddSlider("HitboxSize", {
+MoveSection:AddSlider("HitboxSize", {
     Title = "Hitbox Size",
     Default = 9,
     Min = 3,
     Max = 25,
-    Callback = function(v)
-        Features.HitboxSize = v
-        if Features.HitboxExtender then ApplyHitbox() end
-    end
+    Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end end
 })
-MovementTab:AddToggle("AntiAFK", {
+MoveSection:AddToggle("AntiAFK", {
     Title = "Anti AFK",
     Default = true,
     Callback = function(v) Features.AntiAFK = v end
 })
 
 -- COMBAT
-local CombatTab = Window:AddTab({ Title = "Combat", Icon = "solar/sword-bold" })
-CombatTab:AddToggle("Aimbot", {
+local CombatTab = Window:AddTab({ Title = "Combat", Icon = "sword" })
+local CombatSection = CombatTab:AddSection("Combat")
+CombatSection:AddToggle("Aimbot", {
     Title = "Aimbot",
     Default = false,
     Callback = function(v) Features.Aimbot = v end
 })
-CombatTab:AddToggle("SilentAim", {
+CombatSection:AddToggle("SilentAim", {
     Title = "Silent Aim",
     Default = false,
     Callback = function(v) Features.SilentAim = v end
 })
-CombatTab:AddSlider("FOV", {
-    Title = "Aimbot FOV",
+CombatSection:AddSlider("FOV", {
+    Title = "FOV",
     Default = 230,
     Min = 50,
     Max = 450,
     Callback = function(v) Features.AimbotFOV = v end
 })
-CombatTab:AddSlider("Smoothness", {
+CombatSection:AddSlider("Smoothness", {
     Title = "Smoothness",
     Default = 13,
     Min = 5,
     Max = 50,
     Callback = function(v) Features.AimbotSmooth = v / 100 end
 })
-CombatTab:AddDropdown("AimPart", {
+CombatSection:AddDropdown("AimPart", {
     Title = "Aim Part",
     Values = {"HumanoidRootPart", "Head", "UpperTorso"},
     Default = 1,
     Callback = function(v) Features.AimPart = v end
 })
-CombatTab:AddToggle("AutoKill", {
+CombatSection:AddToggle("AutoKill", {
     Title = "Auto Kill",
     Default = false,
     Callback = function(v) Features.AutoKill = v end
 })
-CombatTab:AddToggle("KnifeAura", {
+CombatSection:AddToggle("KnifeAura", {
     Title = "Knife Aura",
     Default = false,
     Callback = function(v) Features.KnifeAura = v end
 })
-CombatTab:AddSlider("AuraRange", {
+CombatSection:AddSlider("AuraRange", {
     Title = "Aura Range",
     Default = 15,
     Min = 6,
     Max = 35,
     Callback = function(v) Features.AuraRange = v end
 })
-CombatTab:AddDropdown("SelectPlayer", {
+CombatSection:AddDropdown("SelectPlayer", {
     Title = "Select Player",
     Values = PlayerList,
     Default = 1,
     Callback = function(v) Features.SelectedTarget = v end
 })
-CombatTab:AddButton({
-    Title = "Refresh Player List",
+CombatSection:AddButton({
+    Title = "Refresh Players",
     Callback = function()
         PlayerList = {}
         for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                table.insert(PlayerList, plr.Name)
-            end
+            if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
         end
-        Fluent:Notify({ Title = "Players", Content = "Player list refreshed", Duration = 3 })
+        Fluent:Notify({ Title = "Players", Content = "List refreshed", Duration = 3 })
     end
 })
-CombatTab:AddToggle("KillSelected", {
+CombatSection:AddToggle("KillSelected", {
     Title = "Kill Selected",
     Default = false,
     Callback = function(v) Features.KillTarget = v end
 })
 
 -- CARRY
-local CarryTab = Window:AddTab({ Title = "Carry", Icon = "solar/users-group-rounded-bold" })
-CarryTab:AddToggle("Piggyback", {
+local CarryTab = Window:AddTab({ Title = "Carry", Icon = "users" })
+local CarrySection = CarryTab:AddSection("Carry Styles")
+CarrySection:AddToggle("Piggyback", {
     Title = "Piggyback",
     Default = false,
     Callback = function(v) Features.Piggyback = v end
 })
-CarryTab:AddToggle("FrontCarry", {
+CarrySection:AddToggle("FrontCarry", {
     Title = "Front Carry",
     Default = false,
     Callback = function(v) Features.FrontCarry = v end
 })
-CarryTab:AddToggle("SideCarry", {
+CarrySection:AddToggle("SideCarry", {
     Title = "Side Carry",
     Default = false,
     Callback = function(v) Features.SideCarry = v end
 })
 
 -- TROLL
-local TrollTab = Window:AddTab({ Title = "Troll", Icon = "solar/danger-bold" })
-TrollTab:AddToggle("FlingNearest", {
+local TrollTab = Window:AddTab({ Title = "Troll", Icon = "danger" })
+local TrollSection = TrollTab:AddSection("Fling")
+TrollSection:AddToggle("FlingNearest", {
     Title = "Fling Nearest",
     Default = false,
     Callback = function(v) Features.FlingNearest = v end
 })
-TrollTab:AddToggle("FlingSelected", {
+TrollSection:AddToggle("FlingSelected", {
     Title = "Fling Selected",
     Default = false,
     Callback = function(v) Features.FlingTarget = v end
 })
-TrollTab:AddToggle("FlingAll", {
+TrollSection:AddToggle("FlingAll", {
     Title = "Fling All",
     Default = false,
     Callback = function(v) Features.FlingAll = v end
 })
 
 -- SELF
-local SelfTab = Window:AddTab({ Title = "Self", Icon = "solar/user-bold" })
-SelfTab:AddToggle("Invisible", {
+local SelfTab = Window:AddTab({ Title = "Self", Icon = "user" })
+local SelfSection = SelfTab:AddSection("Self")
+SelfSection:AddToggle("Invisible", {
     Title = "Invisible",
     Default = false,
-    Callback = function(v)
-        Features.Invisible = v
-        SetInvisible(v)
-    end
+    Callback = function(v) Features.Invisible = v SetInvisible(v) end
 })
-SelfTab:AddToggle("ServerInvis", {
-    Title = "Server Invis Bypass (Attempt)",
+SelfSection:AddToggle("ServerInvis", {
+    Title = "Server Invis Bypass",
     Default = false,
     Callback = function(v)
         Features.ServerInvisBypass = v
         if v then ApplyServerInvisBypass() end
     end
 })
-SelfTab:AddToggle("GlitchSelf", {
+SelfSection:AddToggle("GlitchSelf", {
     Title = "Glitch Self",
     Default = false,
     Callback = function(v) Features.GlitchSelf = v end
 })
 
 -- UTILITY
-local UtilityTab = Window:AddTab({ Title = "Utility", Icon = "solar/widget-bold" })
-UtilityTab:AddToggle("CoinFarm", {
+local UtilityTab = Window:AddTab({ Title = "Utility", Icon = "widget" })
+local UtilSection = UtilityTab:AddSection("Utility")
+UtilSection:AddToggle("CoinFarm", {
     Title = "Coin Farm",
     Default = false,
     Callback = function(v) Features.CoinFarm = v end
 })
-UtilityTab:AddToggle("GrabGun", {
+UtilSection:AddToggle("GrabGun", {
     Title = "Grab Gun",
     Default = false,
     Callback = function(v) Features.GrabGun = v end
 })
-UtilityTab:AddToggle("TPMurderer", {
+UtilSection:AddToggle("TPMurderer", {
     Title = "TP to Murderer",
     Default = false,
     Callback = function(v) Features.TPMurderer = v end
 })
-UtilityTab:AddToggle("TPSheriff", {
+UtilSection:AddToggle("TPSheriff", {
     Title = "TP to Sheriff",
     Default = false,
     Callback = function(v) Features.TPSheriff = v end
 })
-UtilityTab:AddToggle("RoleNotify", {
-    Title = "Role Notify",
-    Default = true,
-    Callback = function(v) Features.RoleNotify = v end
-})
 
 -- TELEPORTS
-local TeleportsTab = Window:AddTab({ Title = "Teleports", Icon = "solar/map-point-bold" })
-TeleportsTab:AddButton({ Title = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end })
-TeleportsTab:AddButton({ Title = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end })
-TeleportsTab:AddButton({ Title = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end })
-TeleportsTab:AddButton({ Title = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end })
-TeleportsTab:AddButton({ Title = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end })
+local TeleportsTab = Window:AddTab({ Title = "Teleports", Icon = "map" })
+local TpSection = TeleportsTab:AddSection("Quick TPs")
+TpSection:AddButton({ Title = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end })
+TpSection:AddButton({ Title = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end })
+TpSection:AddButton({ Title = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end })
+TpSection:AddButton({ Title = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end })
+TpSection:AddButton({ Title = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end })
 
--- BETA
-local BetaTab = Window:AddTab({ Title = "Beta", Icon = "solar/star-bold" })
-if hasBeta then
-    BetaTab:AddParagraph("Status", "You own the Beta gamepass or are Owner.\nExtra experimental features can go here.")
-else
-    BetaTab:AddParagraph("Status", "Beta locked.\n\nGamepass ID: 1944876349")
-    BetaTab:AddButton({
-        Title = "Open Gamepass Page",
-        Callback = function()
-            pcall(function()
-                MarketplaceService:PromptGamePassPurchase(LocalPlayer, BETA_GAMEPASS_ID)
-            end)
-        end
-    })
-end
-
--- SETTINGS + THEMES
-local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "solar/settings-bold" })
-
-SettingsTab:AddButton({
+-- SETTINGS
+local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "settings" })
+local SettingsSection = SettingsTab:AddSection("Server")
+SettingsSection:AddButton({
     Title = "Rejoin",
-    Callback = function()
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end
+    Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end
 })
-
-SettingsTab:AddButton({
+SettingsSection:AddButton({
     Title = "Server Hop",
     Callback = function()
         pcall(function()
@@ -1133,13 +1035,12 @@ SettingsTab:AddButton({
     end
 })
 
--- SaveManager + InterfaceManager (Themes + Config)
+-- Save + Themes
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 InterfaceManager:SetFolder("ZuzifyRBX")
 SaveManager:SetFolder("ZuzifyRBX/Config")
-
-InterfaceManager:BuildInterfaceSection(SettingsTab) -- Themes live here
+InterfaceManager:BuildInterfaceSection(SettingsTab)
 SaveManager:BuildConfigSection(SettingsTab)
 SaveManager:LoadAutoloadConfig()
 
@@ -1147,8 +1048,8 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "ZuzifyRBX",
-    Content = "Fully upgraded version loaded" .. (hasBeta and " | Beta Unlocked" or ""),
+    Content = "Fully working version loaded" .. (isOwner and " | OWNER" or ""),
     Duration = 5
 })
 
-print("ZuzifyRBX Upgraded | Owner:", isOwner, "| Beta:", hasBeta)
+print("ZuzifyRBX Working Version | Owner:", isOwner, "| Beta:", hasBeta)
