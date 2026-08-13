@@ -1,776 +1,418 @@
--- ZuzifyRBX - Complete & Fully Working Roblox Script
--- Version: 2.0 - Production Ready
+--[[
+    ZuzifyRBX - Luna Edition (Fully Working)
+    UI: Luna Interface Suite
+    Password: password
+    Owner: mrcoptai / 717544874
+    Beta Gamepass: 1944876349
+]]
 
--- ==================== SERVICES ====================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
-local Workspace = game:GetService("Workspace")
-local VirtualUser = game:GetService("VirtualUser")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local MarketplaceService = game:GetService("MarketplaceService")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
 
--- ==================== CONFIGURATION ====================
-local CONFIG = {
-    Password = "password",
-    OwnerUsername = "mrcoptai",
-    OwnerUserId = 717544874,
-    BetaGamepassId = 1944876349,
-    IsOwner = false,
-    HasBeta = false,
-    IsAuthenticated = false,
-    
-    ESP = {
-        Enabled = false,
-        Boxes = false,
-        Names = false,
-        Distance = false,
-        Chams = false,
-        Tracers = false,
-        Color = Color3.fromRGB(255, 0, 0),
-        MaxDistance = 1000
-    },
-    
-    Movement = {
-        Noclip = false,
-        Fly = false,
-        FlySpeed = 50,
-        InfiniteJump = false,
-        WalkSpeed = 16,
-        JumpPower = 50,
-        AntiFling = false,
-        AntiDie = false,
-        HitboxExtender = false,
-        AntiAFK = false
-    },
-    
-    Combat = {
-        Aimbot = false,
-        SilentAim = false,
-        FOV = 100,
-        Smoothness = 0.5,
-        AimPart = "Head",
-        AutoKill = false,
-        KnifeAura = false,
-        SelectedPlayer = nil
-    },
-    
-    Carry = {
-        Piggyback = false,
-        FrontCarry = false,
-        SideCarry = false,
-        TargetPlayer = nil
-    },
-    
-    Troll = {
-        FlingNearest = false,
-        FlingSelected = false,
-        FlingAll = false,
-        SelectedPlayer = nil,
-        FlingPower = 1000
-    },
-    
-    Self = {
-        Invisible = false,
-        ServerInvisBypass = false,
-        GlitchSelf = false
-    },
-    
-    Utility = {
-        CoinFarm = false,
-        GrabGun = false,
-        AutoCollect = false
-    },
-    
-    Teleports = {
-        CustomX = 0,
-        CustomY = 50,
-        CustomZ = 0
-    },
-    
-    Settings = {
-        Theme = "Dark"
-    }
-}
+-- ================= PASSWORD + OWNER + BETA =================
+local CORRECT_PASSWORD = "password"
+local BETA_GAMEPASS_ID = 1944876349
+local isOwner = (LocalPlayer.Name:lower() == "mrcoptai") or (LocalPlayer.UserId == 717544874)
+local passwordPassed = isOwner
+local hasBeta = isOwner
 
--- Check Owner
-if LocalPlayer.Name == CONFIG.OwnerUsername or LocalPlayer.UserId == CONFIG.OwnerUserId then
-    CONFIG.IsOwner = true
-    CONFIG.HasBeta = true
-    CONFIG.IsAuthenticated = true
-end
+if not isOwner then
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "ZuzifyRBX_Pass"
+    gui.ResetOnSpawn = false
+    gui.Parent = CoreGui
 
--- ==================== SAFE FUNCTION WRAPPERS ====================
-local function SafeCall(func, ...)
-    local success, result = pcall(func, ...)
-    if not success then
-        warn("[ZuzifyRBX] Error: " .. tostring(result))
-    end
-    return success, result
-end
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 380, 0, 200)
+    frame.Position = UDim2.new(0.5, -190, 0.5, -100)
+    frame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
-local function Notify(title, content, duration)
-    duration = duration or 3
-    if Fluent and Fluent.Notify then
-        SafeCall(function()
-            Fluent:Notify({
-                Title = title,
-                Content = content,
-                Duration = duration
-            })
-        end)
-    end
-end
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(0, 255, 200)
+    stroke.Thickness = 1.5
+    stroke.Parent = frame
 
--- ==================== LOAD FLUENT UI ====================
-local Fluent = nil
-local loadSuccess = false
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.BackgroundTransparency = 1
+    title.Text = "ZuzifyRBX"
+    title.TextColor3 = Color3.fromRGB(140, 255, 230)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 24
+    title.Parent = frame
 
-SafeCall(function()
-    Fluent = loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro", true))()
-    loadSuccess = true
-end)
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0.84, 0, 0, 42)
+    box.Position = UDim2.new(0.08, 0, 0.38, 0)
+    box.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.PlaceholderText = "Enter Password..."
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 15
+    box.ClearTextOnFocus = false
+    box.Parent = frame
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 9)
 
-if not loadSuccess or not Fluent then
-    warn("[ZuzifyRBX] Failed to load Fluent UI!")
-    return
-end
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.84, 0, 0, 42)
+    btn.Position = UDim2.new(0.08, 0, 0.68, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 180, 150)
+    btn.Text = "Unlock"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Parent = frame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
 
--- ==================== CREATE WINDOW ====================
-local windowTitle = CONFIG.IsOwner and "[OWNER] ZuzifyRBX" or "ZuzifyRBX"
-
-local Window = Fluent:CreateWindow({
-    Title = windowTitle,
-    SubTitle = "by Zuzify Team",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(600, 480),
-    Acrylic = true,
-    Theme = CONFIG.Settings.Theme,
-    MinimizeKey = Enum.KeyCode.LeftControl
-})
-
-local Tabs = {
-    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
-    Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
-    Movement = Window:AddTab({ Title = "Movement", Icon = "move" }),
-    Combat = Window:AddTab({ Title = "Combat", Icon = "crosshair" }),
-    Carry = Window:AddTab({ Title = "Carry", Icon = "user" }),
-    Troll = Window:AddTab({ Title = "Troll", Icon = "zap" }),
-    Self = Window:AddTab({ Title = "Self", Icon = "shield" }),
-    Utility = Window:AddTab({ Title = "Utility", Icon = "tool" }),
-    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map-pin" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
-}
-
--- ==================== AUTHENTICATION ====================
-if not CONFIG.IsOwner then
-    local AuthSection = Tabs.Home:AddSection("Authentication")
-    
-    AuthSection:AddInput("PasswordInput", {
-        Title = "Enter Password",
-        Default = "",
-        Placeholder = "Enter password...",
-        Numeric = false,
-        Finished = true,
-        Callback = function(Value)
-            if Value == CONFIG.Password then
-                CONFIG.IsAuthenticated = true
-                Notify("Authenticated", "Password correct! Welcome to ZuzifyRBX.", 4)
-            else
-                Notify("Authentication Failed", "Incorrect password. Try again.", 3)
-            end
+    local done = false
+    local function tryUnlock()
+        if box.Text == CORRECT_PASSWORD then
+            passwordPassed = true
+            done = true
+            gui:Destroy()
+        else
+            box.Text = ""
+            box.PlaceholderText = "Wrong password"
         end
-    })
-    
-    AuthSection:AddButton({
-        Title = "Verify Beta Gamepass",
-        Description = "Check if you own the beta gamepass",
-        Callback = function()
-            local success, hasPass = pcall(function()
-                return game:GetService("MarketplaceService"):UserOwnsGamePassAsync(LocalPlayer.UserId, CONFIG.BetaGamepassId)
-            end)
-            if success and hasPass then
-                CONFIG.HasBeta = true
-                CONFIG.IsAuthenticated = true
-                Notify("Beta Verified", "Beta gamepass confirmed! Full access granted.", 4)
-            else
-                Notify("Beta Check", "Beta gamepass not found on your account.", 3)
-            end
-        end
-    })
-    
-    AuthSection:AddParagraph({
-        Title = "Access Required",
-        Content = "Enter the password or verify beta gamepass to unlock all features."
-    })
-end
-
--- ==================== HOME TAB ====================
-local HomeWelcome = Tabs.Home:AddSection("Welcome")
-
-HomeWelcome:AddParagraph({
-    Title = "Welcome to ZuzifyRBX",
-    Content = "The ultimate all-in-one Roblox utility. Built for performance, packed with features."
-})
-
-HomeWelcome:AddParagraph({
-    Title = "Account Status",
-    Content = string.format("User: %s | ID: %d\nOwner: %s | Beta: %s | Auth: %s",
-        LocalPlayer.Name, LocalPlayer.UserId,
-        tostring(CONFIG.IsOwner), tostring(CONFIG.HasBeta), tostring(CONFIG.IsAuthenticated))
-})
-
-HomeWelcome:AddButton({
-    Title = "Copy Discord Invite",
-    Description = "Copy our official Discord server link",
-    Callback = function()
-        SafeCall(function()
-            setclipboard("discord.gg/zuzify")
-            Notify("Copied", "Discord link copied to clipboard!", 2)
-        end)
     end
-})
 
-local HomeNews = Tabs.Home:AddSection("Zuzify News")
-
-local NewsParagraph = HomeNews:AddParagraph({
-    Title = "Loading News...",
-    Content = "Please wait while we fetch the latest updates."
-})
-
-task.spawn(function()
-    local success, news = pcall(function()
-        return game:HttpGet("https://pastebin.com/raw/F3p7v62u", true)
+    btn.MouseButton1Click:Connect(tryUnlock)
+    box.FocusLost:Connect(function(enter)
+        if enter then tryUnlock() end
     end)
-    if success and news and #news > 0 then
-        NewsParagraph:SetTitle("Latest News")
-        NewsParagraph:SetDesc(news)
-    else
-        NewsParagraph:SetTitle("News Unavailable")
-        NewsParagraph:SetDesc("Could not fetch news. Check your connection or try again later.")
-    end
+
+    while not done do task.wait() end
+end
+
+if not passwordPassed then return end
+
+pcall(function()
+    hasBeta = MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, BETA_GAMEPASS_ID) or isOwner
 end)
 
--- ==================== VISUALS TAB ====================
-local VisualsSection = Tabs.Visuals:AddSection("ESP Configuration")
+-- ================= LOAD LUNA =================
+local Luna = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nebula-Softworks/Luna-Interface-Suite/refs/heads/master/source.lua", true))()
 
-VisualsSection:AddToggle("ESP_Main", {
-    Title = "ESP Master Toggle",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.ESP.Enabled = Value
-        if not Value then
-            for _, data in pairs(ESPObjects) do
-                pcall(function() data.Box.Visible = false end)
-                pcall(function() data.NameLabel.Visible = false end)
-                pcall(function() data.DistanceLabel.Visible = false end)
-                pcall(function() data.Tracer.Visible = false end)
-                pcall(function() if data.Cham then data.Cham.Enabled = false end end)
-            end
-        end
-    end
+local Window = Luna:CreateWindow({
+    Name = "ZuzifyRBX" .. (isOwner and " [OWNER]" or (hasBeta and " [BETA]" or "")),
+    Subtitle = "by Tai (vertexi8)",
+    LogoID = nil,
+    LoadingEnabled = true,
+    LoadingTitle = "ZuzifyRBX",
+    LoadingSubtitle = "Loading all features...",
+    KeySystem = false,
 })
 
-VisualsSection:AddToggle("ESP_Boxes", {
-    Title = "Boxes",
-    Default = false,
-    Callback = function(Value) CONFIG.ESP.Boxes = Value end
-})
+-- ================= FEATURES =================
+local Features = {
+    ESP = false,
+    ESP_Names = true,
+    ESP_Distance = true,
+    ESP_Chams = true,
 
-VisualsSection:AddToggle("ESP_Names", {
-    Title = "Names",
-    Default = false,
-    Callback = function(Value) CONFIG.ESP.Names = Value end
-})
+    NoclipType = "None",
+    FlyType = "None",
+    FlySpeed = 60,
+    InfiniteJump = false,
+    WalkSpeed = 16,
+    JumpPower = 50,
+    AntiAFK = true,
+    AntiFling = true,
+    HitboxExtender = false,
+    HitboxSize = 9,
 
-VisualsSection:AddToggle("ESP_Distance", {
-    Title = "Distance",
-    Default = false,
-    Callback = function(Value) CONFIG.ESP.Distance = Value end
-})
+    Aimbot = false,
+    SilentAim = false,
+    AimbotFOV = 230,
+    AimbotSmooth = 0.13,
+    AimbotPrediction = 0.14,
+    AimPart = "HumanoidRootPart",
+    AutoKill = false,
+    KnifeAura = false,
+    AuraRange = 15,
+    SelectedTarget = nil,
+    KillTarget = false,
 
-VisualsSection:AddToggle("ESP_Chams", {
-    Title = "Chams",
-    Default = false,
-    Callback = function(Value) CONFIG.ESP.Chams = Value end
-})
+    Piggyback = false,
+    FrontCarry = false,
+    SideCarry = false,
 
-VisualsSection:AddToggle("ESP_Tracers", {
-    Title = "Tracers",
-    Default = false,
-    Callback = function(Value) CONFIG.ESP.Tracers = Value end
-})
+    FlingNearest = false,
+    FlingTarget = false,
+    FlingAll = false,
 
-VisualsSection:AddSlider("ESP_DistanceSlider", {
-    Title = "Max Distance",
-    Default = 1000,
-    Min = 100,
-    Max = 5000,
-    Rounding = 0,
-    Callback = function(Value) CONFIG.ESP.MaxDistance = Value end
-})
+    Invisible = false,
+    ServerInvisBypass = false,
+    GlitchSelf = false,
 
-VisualsSection:AddDropdown("ESP_Color", {
-    Title = "ESP Color",
-    Values = {"Red", "Green", "Blue", "Yellow", "White", "Purple", "Cyan", "Orange"},
-    Multi = false,
-    Default = "Red",
-    Callback = function(Value)
-        local colors = {
-            Red = Color3.fromRGB(255, 0, 0),
-            Green = Color3.fromRGB(0, 255, 0),
-            Blue = Color3.fromRGB(0, 100, 255),
-            Yellow = Color3.fromRGB(255, 255, 0),
-            White = Color3.fromRGB(255, 255, 255),
-            Purple = Color3.fromRGB(170, 0, 255),
-            Cyan = Color3.fromRGB(0, 255, 255),
-            Orange = Color3.fromRGB(255, 150, 0)
-        }
-        CONFIG.ESP.Color = colors[Value] or Color3.fromRGB(255, 0, 0)
-    end
-})
+    CoinFarm = false,
+    GrabGun = false,
+    TPMurderer = false,
+    TPSheriff = false,
+    RoleNotify = true,
+    AntiDie = false,
+}
 
--- ==================== ESP SYSTEM ====================
+local RoleColors = {
+    Murderer = Color3.fromRGB(255, 45, 45),
+    Sheriff = Color3.fromRGB(50, 140, 255),
+    Innocent = Color3.fromRGB(50, 230, 90),
+}
+
 local ESPObjects = {}
+local BodyVel, BodyGyro = nil, nil
+local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch = 0, 0, 0, 0, 0, 0
+local currentMurderer, currentSheriff = nil, nil
+local PlayerList = {}
+local originalTransparency = {}
 
-local function CreateESP(player)
-    if player == LocalPlayer then return end
-    if ESPObjects[player] then return end
-    
-    local box = Drawing.new("Square")
-    box.Visible = false
-    box.Thickness = 1.5
-    box.Filled = false
-    box.Color = CONFIG.ESP.Color
-    
-    local nameLabel = Drawing.new("Text")
-    nameLabel.Visible = false
-    nameLabel.Center = true
-    nameLabel.Outline = true
-    nameLabel.Font = 2
-    nameLabel.Size = 13
-    nameLabel.Color = CONFIG.ESP.Color
-    
-    local distanceLabel = Drawing.new("Text")
-    distanceLabel.Visible = false
-    distanceLabel.Center = true
-    distanceLabel.Outline = true
-    distanceLabel.Font = 2
-    distanceLabel.Size = 12
-    distanceLabel.Color = CONFIG.ESP.Color
-    
-    local tracer = Drawing.new("Line")
-    tracer.Visible = false
-    tracer.Thickness = 1
-    tracer.Color = CONFIG.ESP.Color
-    
-    local cham = nil
-    pcall(function()
-        cham = Instance.new("Highlight")
-        cham.FillColor = CONFIG.ESP.Color
-        cham.OutlineColor = Color3.new(1, 1, 1)
-        cham.FillTransparency = 0.6
-        cham.OutlineTransparency = 0
-        cham.Enabled = false
-        cham.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        cham.Parent = CoreGui
-    end)
-    
-    ESPObjects[player] = {
-        Box = box,
-        NameLabel = nameLabel,
-        DistanceLabel = distanceLabel,
-        Tracer = tracer,
-        Cham = cham
-    }
+-- ================= ROLE =================
+local function GetRole(plr)
+    if not plr or not plr.Character then return "Innocent" end
+    local function check(tool)
+        if not tool or not tool:IsA("Tool") then return nil end
+        local n = string.lower(tool.Name)
+        if string.find(n, "knife") or string.find(n, "dagger") or string.find(n, "blade") or string.find(n, "sword") then
+            return "Murderer"
+        elseif string.find(n, "gun") or string.find(n, "revolver") or string.find(n, "pistol") then
+            return "Sheriff"
+        end
+        return nil
+    end
+    local role = check(plr.Character:FindFirstChildOfClass("Tool"))
+    if role then return role end
+    local bp = plr:FindFirstChild("Backpack")
+    if bp then
+        for _, item in ipairs(bp:GetChildren()) do
+            role = check(item)
+            if role then return role end
+        end
+    end
+    return "Innocent"
 end
 
-local function RemoveESP(player)
-    local data = ESPObjects[player]
-    if data then
-        pcall(function() data.Box:Remove() end)
-        pcall(function() data.NameLabel:Remove() end)
-        pcall(function() data.DistanceLabel:Remove() end)
-        pcall(function() data.Tracer:Remove() end)
-        pcall(function() if data.Cham then data.Cham:Destroy() end end)
-        ESPObjects[player] = nil
+-- ================= ESP =================
+local function ClearESP(plr)
+    if ESPObjects[plr] then
+        for _, obj in pairs(ESPObjects[plr]) do
+            pcall(function() obj:Destroy() end)
+        end
+        ESPObjects[plr] = nil
     end
 end
 
-local function UpdateESP()
-    for player, data in pairs(ESPObjects) do
-        local success = pcall(function()
-            local character = player.Character
-            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-            local hrp = character and character:FindFirstChild("HumanoidRootPart")
-            local head = character and character:FindFirstChild("Head")
-            local localChar = LocalPlayer.Character
-            local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
-            
-            if not (character and hrp and head and humanoid and humanoid.Health > 0 and localHRP) then
-                data.Box.Visible = false
-                data.NameLabel.Visible = false
-                data.DistanceLabel.Visible = false
-                data.Tracer.Visible = false
-                if data.Cham then data.Cham.Enabled = false end
-                return
-            end
-            
-            local distance = (localHRP.Position - hrp.Position).Magnitude
-            if distance > CONFIG.ESP.MaxDistance then
-                data.Box.Visible = false
-                data.NameLabel.Visible = false
-                data.DistanceLabel.Visible = false
-                data.Tracer.Visible = false
-                if data.Cham then data.Cham.Enabled = false end
-                return
-            end
-            
-            local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-            local rootPos, rootOnScreen = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-            
-            if not (headOnScreen and rootOnScreen) then
-                data.Box.Visible = false
-                data.NameLabel.Visible = false
-                data.DistanceLabel.Visible = false
-                data.Tracer.Visible = false
-                if data.Cham then data.Cham.Enabled = false end
-                return
-            end
-            
-            local boxHeight = math.abs(headPos.Y - rootPos.Y)
-            local boxWidth = boxHeight * 0.55
-            
-            data.Box.Color = CONFIG.ESP.Color
-            data.NameLabel.Color = CONFIG.ESP.Color
-            data.DistanceLabel.Color = CONFIG.ESP.Color
-            data.Tracer.Color = CONFIG.ESP.Color
-            if data.Cham then data.Cham.FillColor = CONFIG.ESP.Color end
-            
-            data.Box.Visible = CONFIG.ESP.Enabled and CONFIG.ESP.Boxes
-            data.Box.Size = Vector2.new(boxWidth, boxHeight)
-            data.Box.Position = Vector2.new(headPos.X - boxWidth / 2, headPos.Y)
-            
-            data.NameLabel.Visible = CONFIG.ESP.Enabled and CONFIG.ESP.Names
-            data.NameLabel.Position = Vector2.new(headPos.X, headPos.Y - 18)
-            data.NameLabel.Text = player.Name
-            
-            data.DistanceLabel.Visible = CONFIG.ESP.Enabled and CONFIG.ESP.Distance
-            data.DistanceLabel.Position = Vector2.new(rootPos.X, rootPos.Y + 6)
-            data.DistanceLabel.Text = string.format("[%d studs]", math.floor(distance))
-            
-            data.Tracer.Visible = CONFIG.ESP.Enabled and CONFIG.ESP.Tracers
-            data.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-            data.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
-            
-            if data.Cham then
-                data.Cham.Enabled = CONFIG.ESP.Enabled and CONFIG.ESP.Chams
-                data.Cham.Adornee = character
-            end
-        end)
-        
-        if not success then
-            pcall(function() data.Box.Visible = false end)
-            pcall(function() data.NameLabel.Visible = false end)
-            pcall(function() data.DistanceLabel.Visible = false end)
-            pcall(function() data.Tracer.Visible = false end)
-            pcall(function() if data.Cham then data.Cham.Enabled = false end end)
+local function ClearAllESP()
+    for plr in pairs(ESPObjects) do ClearESP(plr) end
+end
+
+local function CreateESP(plr)
+    if plr == LocalPlayer or ESPObjects[plr] then return end
+    local char = plr.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    local role = GetRole(plr)
+    local color = RoleColors[role] or RoleColors.Innocent
+    local objects = {}
+
+    if Features.ESP_Names or Features.ESP_Distance then
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "ZRBX_ESP"
+        bb.Adornee = head
+        bb.Size = UDim2.new(0, 220, 0, 55)
+        bb.StudsOffset = Vector3.new(0, 3.1, 0)
+        bb.AlwaysOnTop = true
+        bb.MaxDistance = 4000
+        bb.Parent = head
+
+        local nameL = Instance.new("TextLabel")
+        nameL.Size = UDim2.new(1, 0, 0.55, 0)
+        nameL.BackgroundTransparency = 1
+        nameL.Text = plr.Name .. " [" .. role .. "]"
+        nameL.TextColor3 = color
+        nameL.TextStrokeTransparency = 0.1
+        nameL.Font = Enum.Font.GothamBold
+        nameL.TextSize = 14
+        nameL.Parent = bb
+
+        local distL = Instance.new("TextLabel")
+        distL.Size = UDim2.new(1, 0, 0.45, 0)
+        distL.Position = UDim2.new(0, 0, 0.55, 0)
+        distL.BackgroundTransparency = 1
+        distL.Text = "0"
+        distL.TextColor3 = color
+        distL.TextStrokeTransparency = 0.1
+        distL.Font = Enum.Font.Gotham
+        distL.TextSize = 12
+        distL.Parent = bb
+
+        objects.Billboard = bb
+        objects.NameLabel = nameL
+        objects.DistLabel = distL
+    end
+
+    if Features.ESP_Chams then
+        local hl = Instance.new("Highlight")
+        hl.Name = "ZRBX_Chams"
+        hl.Adornee = char
+        hl.FillColor = color
+        hl.OutlineColor = color
+        hl.FillTransparency = 0.45
+        hl.OutlineTransparency = 0
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Parent = char
+        objects.Highlight = hl
+    end
+
+    ESPObjects[plr] = objects
+end
+
+local function RefreshESP()
+    ClearAllESP()
+    if not Features.ESP then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            CreateESP(plr)
         end
     end
 end
 
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then CreateESP(player) end
-end
-Players.PlayerAdded:Connect(CreateESP)
-Players.PlayerRemoving:Connect(RemoveESP)
-
--- ==================== MOVEMENT TAB ====================
-local MovementSection = Tabs.Movement:AddSection("Movement Controls")
-
-MovementSection:AddToggle("Noclip", {
-    Title = "Noclip",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Movement.Noclip = Value
-        if not Value then
-            local char = LocalPlayer.Character
-            if char then
-                for _, part in ipairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-    end
-})
-
-MovementSection:AddToggle("Fly", {
-    Title = "Fly",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Movement.Fly = Value
-        if not Value then
-            StopFly()
-        end
-    end
-})
-
-MovementSection:AddSlider("FlySpeed", {
-    Title = "Fly Speed",
-    Default = 50,
-    Min = 10,
-    Max = 300,
-    Rounding = 0,
-    Callback = function(Value) CONFIG.Movement.FlySpeed = Value end
-})
-
-MovementSection:AddToggle("InfiniteJump", {
-    Title = "Infinite Jump",
-    Default = false,
-    Callback = function(Value) CONFIG.Movement.InfiniteJump = Value end
-})
-
-MovementSection:AddSlider("WalkSpeed", {
-    Title = "WalkSpeed",
-    Default = 16,
-    Min = 16,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(Value)
-        CONFIG.Movement.WalkSpeed = Value
-        local char = LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid then humanoid.WalkSpeed = Value end
-    end
-})
-
-MovementSection:AddSlider("JumpPower", {
-    Title = "JumpPower",
-    Default = 50,
-    Min = 50,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(Value)
-        CONFIG.Movement.JumpPower = Value
-        local char = LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid then humanoid.JumpPower = Value end
-    end
-})
-
-MovementSection:AddToggle("AntiFling", {
-    Title = "Anti Fling",
-    Default = false,
-    Callback = function(Value) CONFIG.Movement.AntiFling = Value end
-})
-
-MovementSection:AddToggle("AntiDie", {
-    Title = "Anti Die",
-    Default = false,
-    Callback = function(Value) CONFIG.Movement.AntiDie = Value end
-})
-
-MovementSection:AddToggle("HitboxExtender", {
-    Title = "Hitbox Extender",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Movement.HitboxExtender = Value
-        if not Value then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local head = player.Character:FindFirstChild("Head")
-                    if head then
-                        head.Size = Vector3.new(2, 1, 1)
-                        head.Transparency = 0
-                    end
-                end
-            end
-        end
-    end
-})
-
-MovementSection:AddToggle("AntiAFK", {
-    Title = "Anti AFK",
-    Default = false,
-    Callback = function(Value) CONFIG.Movement.AntiAFK = Value end
-})
-
--- Fly System
-local FlyBodyGyro, FlyBodyVelocity
-
-function StartFly()
-    StopFly()
+-- ================= HELPERS =================
+local function ApplyStats()
     local char = LocalPlayer.Character
     if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    FlyBodyGyro = Instance.new("BodyGyro")
-    FlyBodyGyro.P = 9e4
-    FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    FlyBodyGyro.CFrame = hrp.CFrame
-    FlyBodyGyro.Parent = hrp
-    
-    FlyBodyVelocity = Instance.new("BodyVelocity")
-    FlyBodyVelocity.Velocity = Vector3.zero
-    FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    FlyBodyVelocity.Parent = hrp
-end
-
-function StopFly()
-    if FlyBodyGyro then
-        pcall(function() FlyBodyGyro:Destroy() end)
-        FlyBodyGyro = nil
-    end
-    if FlyBodyVelocity then
-        pcall(function() FlyBodyVelocity:Destroy() end)
-        FlyBodyVelocity = nil
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = Features.WalkSpeed
+        hum.JumpPower = Features.JumpPower
     end
 end
 
--- ==================== COMBAT TAB ====================
-local CombatSection = Tabs.Combat:AddSection("Combat Settings")
-
-CombatSection:AddToggle("Aimbot", {
-    Title = "Aimbot",
-    Default = false,
-    Callback = function(Value) CONFIG.Combat.Aimbot = Value end
-})
-
-CombatSection:AddToggle("SilentAim", {
-    Title = "Silent Aim",
-    Default = false,
-    Callback = function(Value) CONFIG.Combat.SilentAim = Value end
-})
-
-CombatSection:AddSlider("FOV", {
-    Title = "Aimbot FOV",
-    Default = 100,
-    Min = 10,
-    Max = 500,
-    Rounding = 0,
-    Callback = function(Value) CONFIG.Combat.FOV = Value end
-})
-
-CombatSection:AddSlider("Smoothness", {
-    Title = "Smoothness",
-    Default = 0.5,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Callback = function(Value) CONFIG.Combat.Smoothness = Value end
-})
-
-CombatSection:AddDropdown("AimPart", {
-    Title = "Aim Part",
-    Values = {"Head", "HumanoidRootPart", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"},
-    Multi = false,
-    Default = "Head",
-    Callback = function(Value)
-        local parts = {
-            ["Head"] = "Head",
-            ["HumanoidRootPart"] = "HumanoidRootPart",
-            ["Torso"] = "Torso",
-            ["Left Arm"] = "Left Arm",
-            ["Right Arm"] = "Right Arm",
-            ["Left Leg"] = "Left Leg",
-            ["Right Leg"] = "Right Leg"
-        }
-        CONFIG.Combat.AimPart = parts[Value] or "Head"
-    end
-})
-
-CombatSection:AddToggle("AutoKill", {
-    Title = "Auto Kill",
-    Default = false,
-    Callback = function(Value) CONFIG.Combat.AutoKill = Value end
-})
-
-CombatSection:AddToggle("KnifeAura", {
-    Title = "Knife Aura",
-    Default = false,
-    Callback = function(Value) CONFIG.Combat.KnifeAura = Value end
-})
-
-local function GetPlayerList()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then table.insert(list, p.Name) end
-    end
-    return list
-end
-
-CombatSection:AddDropdown("SelectPlayer", {
-    Title = "Select Player",
-    Values = GetPlayerList(),
-    Multi = false,
-    Default = "",
-    Callback = function(Value)
-        CONFIG.Combat.SelectedPlayer = Players:FindFirstChild(Value)
-    end
-})
-
-CombatSection:AddButton({
-    Title = "Refresh Player List",
-    Description = "Update the player dropdown",
-    Callback = function()
-        Notify("Combat", "Player list refreshed. Reopen dropdown to see updates.", 2)
-    end
-})
-
-CombatSection:AddButton({
-    Title = "Kill Selected",
-    Description = "Teleport and attack selected player",
-    Callback = function()
-        if not CONFIG.Combat.SelectedPlayer then
-            Notify("Combat", "No player selected!", 2)
-            return
+local function ApplyNoclip()
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = (Features.NoclipType == "None")
         end
-        local target = CONFIG.Combat.SelectedPlayer
-        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local localChar = LocalPlayer.Character
-            local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
-            if localHRP then
-                local oldCF = localHRP.CFrame
-                localHRP.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                task.wait(0.15)
-                localHRP.CFrame = oldCF
-                Notify("Combat", "Attacked " .. target.Name, 2)
+    end
+end
+
+local function SetupFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if BodyVel then BodyVel:Destroy() end
+    if BodyGyro then BodyGyro:Destroy() end
+
+    if Features.FlyType ~= "None" then
+        BodyVel = Instance.new("BodyVelocity")
+        BodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        BodyVel.Velocity = Vector3.zero
+        BodyVel.Parent = root
+
+        BodyGyro = Instance.new("BodyGyro")
+        BodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+        BodyGyro.P = 18000
+        BodyGyro.Parent = root
+    end
+end
+
+local function CleanupFly()
+    if BodyVel then BodyVel:Destroy() BodyVel = nil end
+    if BodyGyro then BodyGyro:Destroy() BodyGyro = nil end
+end
+
+local function ApplyHitbox()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if Features.HitboxExtender then
+        root.Size = Vector3.new(Features.HitboxSize, Features.HitboxSize, Features.HitboxSize)
+        root.Transparency = 0.55
+        root.CanCollide = false
+    else
+        root.Size = Vector3.new(2, 2, 1)
+        root.Transparency = 1
+    end
+end
+
+local function SetInvisible(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") or part:IsA("Decal") then
+            if state then
+                if not originalTransparency[part] then
+                    originalTransparency[part] = part.Transparency
+                end
+                part.Transparency = 1
+                if part:IsA("BasePart") then
+                    pcall(function() part.LocalTransparencyModifier = 1 end)
+                end
+            else
+                if originalTransparency[part] then
+                    part.Transparency = originalTransparency[part]
+                end
+                if part:IsA("BasePart") then
+                    pcall(function() part.LocalTransparencyModifier = 0 end)
+                end
             end
         end
     end
-})
+    if not state then table.clear(originalTransparency) end
+end
 
--- Aimbot Logic
-local function GetClosestPlayerToMouse()
-    local closest = nil
-    local shortest = CONFIG.Combat.FOV
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local char = player.Character
-            local aimPart = char:FindFirstChild(CONFIG.Combat.AimPart) or char:FindFirstChild("Head")
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            local localChar = LocalPlayer.Character
-            
-            if aimPart and humanoid and humanoid.Health > 0 and localChar then
-                local pos, onScreen = Camera:WorldToViewportPoint(aimPart.Position)
-                if onScreen then
-                    local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
-                    if dist < shortest then
-                        shortest = dist
-                        closest = player
-                    end
+local function ApplyServerInvisBypass()
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                part.LocalTransparencyModifier = 1
+                part.Transparency = 1
+            end)
+        end
+    end
+end
+
+local function Teleport(pos)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then root.CFrame = CFrame.new(pos) end
+end
+
+local function GetClosestPlayer(maxDist)
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return nil end
+    local closest, closestDist = nil, maxDist or 9999
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local root = plr.Character:FindFirstChild("HumanoidRootPart")
+            local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+            if root and hum and hum.Health > 0 then
+                local dist = (myRoot.Position - root.Position).Magnitude
+                if dist < closestDist then
+                    closestDist = dist
+                    closest = plr
                 end
             end
         end
@@ -778,953 +420,725 @@ local function GetClosestPlayerToMouse()
     return closest
 end
 
--- Silent Aim
-local SilentAimHooked = false
-if hookmetamethod and getnamecallmethod then
-    local OldNamecall
-    OldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if CONFIG.Combat.SilentAim and (method == "FireServer" or method == "InvokeServer") then
-            local args = {...}
-            local target = GetClosestPlayerToMouse()
-            if target and target.Character then
-                local aimPart = target.Character:FindFirstChild(CONFIG.Combat.AimPart) or target.Character:FindFirstChild("Head")
-                if aimPart then
-                    for i, arg in ipairs(args) do
-                        if typeof(arg) == "CFrame" then
-                            args[i] = CFrame.new(aimPart.Position)
-                        elseif typeof(arg) == "Vector3" then
-                            args[i] = aimPart.Position
-                        end
-                    end
-                    return OldNamecall(self, unpack(args))
-                end
-            end
-        end
-        return OldNamecall(self, ...)
-    end)
-    SilentAimHooked = true
+local function Fling(plr, strength)
+    if not plr or not plr.Character then return end
+    local root = plr.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    strength = strength or 160
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bv.Velocity = Vector3.new(math.random(-strength, strength), math.random(80, 140), math.random(-strength, strength))
+    bv.Parent = root
+    task.delay(0.35, function() if bv then bv:Destroy() end end)
 end
 
--- ==================== CARRY TAB ====================
-local CarrySection = Tabs.Carry:AddSection("Carry Options")
+local function DoCarry(style)
+    if not Features.SelectedTarget then return end
+    local target = Players:FindFirstChild(Features.SelectedTarget)
+    if not target or not target.Character then return end
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot or not tRoot then return end
 
-CarrySection:AddToggle("Piggyback", {
-    Title = "Piggyback",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Carry.Piggyback = Value
-        if Value then
-            CONFIG.Carry.FrontCarry = false
-            CONFIG.Carry.SideCarry = false
+    if style == "Piggyback" then
+        myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 3.0, 0.3)
+    elseif style == "Front" then
+        myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, -3.0)
+    elseif style == "Side" then
+        myRoot.CFrame = tRoot.CFrame * CFrame.new(2.6, 0.4, 0)
+    end
+end
+
+-- ================= CHARACTER =================
+local function OnCharacter(char)
+    task.wait(0.7)
+    ApplyStats()
+    ApplyNoclip()
+    if Features.FlyType ~= "None" then SetupFly() end
+    if Features.HitboxExtender then ApplyHitbox() end
+    if Features.Invisible then SetInvisible(true) end
+    if Features.ServerInvisBypass then ApplyServerInvisBypass() end
+    if Features.ESP then task.delay(0.4, RefreshESP) end
+end
+
+if LocalPlayer.Character then OnCharacter(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(OnCharacter)
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        task.wait(1)
+        if Features.ESP then CreateESP(plr) end
+        if not table.find(PlayerList, plr.Name) then
+            table.insert(PlayerList, plr.Name)
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    ClearESP(plr)
+    for i, name in ipairs(PlayerList) do
+        if name == plr.Name then
+            table.remove(PlayerList, i)
+            break
         end
     end
-})
+end)
 
-CarrySection:AddToggle("FrontCarry", {
-    Title = "Front Carry",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Carry.FrontCarry = Value
-        if Value then
-            CONFIG.Carry.Piggyback = false
-            CONFIG.Carry.SideCarry = false
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
+        table.insert(PlayerList, plr.Name)
+    end
+end
+
+-- ================= MAIN LOOP =================
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+    if tick() - lastRole > 1.1 then
+        lastRole = tick()
+        local mur, sher = nil, nil
+        for _, plr in ipairs(Players:GetPlayers()) do
+            local role = GetRole(plr)
+            if role == "Murderer" then mur = plr end
+            if role == "Sheriff" then sher = plr end
         end
+        currentMurderer = mur
+        currentSheriff = sher
     end
-})
 
-CarrySection:AddToggle("SideCarry", {
-    Title = "Side Carry",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Carry.SideCarry = Value
-        if Value then
-            CONFIG.Carry.Piggyback = false
-            CONFIG.Carry.FrontCarry = false
-        end
-    end
-})
+    if Features.ESP and root then
+        for plr, objs in pairs(ESPObjects) do
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local tRoot = plr.Character.HumanoidRootPart
+                local dist = (root.Position - tRoot.Position).Magnitude
+                local role = GetRole(plr)
+                local color = RoleColors[role] or RoleColors.Innocent
 
-CarrySection:AddDropdown("CarryTarget", {
-    Title = "Target Player",
-    Values = GetPlayerList(),
-    Multi = false,
-    Default = "",
-    Callback = function(Value)
-        CONFIG.Carry.TargetPlayer = Players:FindFirstChild(Value)
-    end
-})
-
-CarrySection:AddParagraph({
-    Title = "How to Use",
-    Content = "Select a target player, enable a carry mode, and walk near them. They will be attached to you."
-})
-
--- ==================== TROLL TAB ====================
-local TrollSection = Tabs.Troll:AddSection("Troll Options")
-
-TrollSection:AddToggle("FlingNearest", {
-    Title = "Fling Nearest",
-    Default = false,
-    Callback = function(Value) CONFIG.Troll.FlingNearest = Value end
-})
-
-TrollSection:AddToggle("FlingAll", {
-    Title = "Fling All",
-    Default = false,
-    Callback = function(Value) CONFIG.Troll.FlingAll = Value end
-})
-
-TrollSection:AddSlider("FlingPower", {
-    Title = "Fling Power",
-    Default = 1000,
-    Min = 100,
-    Max = 5000,
-    Rounding = 0,
-    Callback = function(Value) CONFIG.Troll.FlingPower = Value end
-})
-
-TrollSection:AddDropdown("FlingSelectPlayer", {
-    Title = "Select Player to Fling",
-    Values = GetPlayerList(),
-    Multi = false,
-    Default = "",
-    Callback = function(Value)
-        CONFIG.Troll.SelectedPlayer = Players:FindFirstChild(Value)
-    end
-})
-
-TrollSection:AddButton({
-    Title = "Fling Selected",
-    Description = "Fling the selected player once",
-    Callback = function()
-        if not CONFIG.Troll.SelectedPlayer then
-            Notify("Troll", "No player selected!", 2)
-            return
-        end
-        local target = CONFIG.Troll.SelectedPlayer
-        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = target.Character.HumanoidRootPart
-            local bv = Instance.new("BodyVelocity")
-            bv.Velocity = Vector3.new(
-                math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower),
-                CONFIG.Troll.FlingPower,
-                math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower)
-            )
-            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            bv.Parent = hrp
-            game:GetService("Debris"):AddItem(bv, 0.5)
-            Notify("Troll", "Flung " .. target.Name .. "!", 2)
-        end
-    end
-})
-
-TrollSection:AddButton({
-    Title = "Fling Everyone Once",
-    Description = "Fling all players once",
-    Callback = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = player.Character.HumanoidRootPart
-                local bv = Instance.new("BodyVelocity")
-                bv.Velocity = Vector3.new(
-                    math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower),
-                    CONFIG.Troll.FlingPower,
-                    math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower)
-                )
-                bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                bv.Parent = hrp
-                game:GetService("Debris"):AddItem(bv, 0.5)
+                if objs.NameLabel then
+                    objs.NameLabel.Text = plr.Name .. " [" .. role .. "]"
+                    objs.NameLabel.TextColor3 = color
+                    objs.NameLabel.Visible = Features.ESP_Names
+                end
+                if objs.DistLabel then
+                    objs.DistLabel.Text = math.floor(dist) .. " studs"
+                    objs.DistLabel.TextColor3 = color
+                    objs.DistLabel.Visible = Features.ESP_Distance
+                end
+                if objs.Highlight then
+                    objs.Highlight.FillColor = color
+                    objs.Highlight.OutlineColor = color
+                end
+            else
+                ClearESP(plr)
             end
         end
-        Notify("Troll", "Everyone has been flung!", 2)
     end
-})
 
--- ==================== SELF TAB ====================
-local SelfSection = Tabs.Self:AddSection("Self Options")
+    if Features.NoclipType ~= "None" then ApplyNoclip() end
 
-SelfSection:AddToggle("Invisible", {
-    Title = "Invisible",
-    Default = false,
-    Callback = function(Value)
-        CONFIG.Self.Invisible = Value
-        local char = LocalPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                    if Value then
-                        if part:GetAttribute("Zuzi_OriginalTransparency") == nil then
-                            part:SetAttribute("Zuzi_OriginalTransparency", part.Transparency)
-                        end
-                        part.Transparency = 1
-                    else
-                        local orig = part:GetAttribute("Zuzi_OriginalTransparency")
-                        if orig ~= nil then
-                            part.Transparency = orig
-                        else
-                            part.Transparency = 0
-                        end
-                    end
-                end
-                if part:IsA("Decal") or part:IsA("Texture") then
-                    if Value then
-                        if part:GetAttribute("Zuzi_OriginalTransparency") == nil then
-                            part:SetAttribute("Zuzi_OriginalTransparency", part.Transparency)
-                        end
-                        part.Transparency = 1
-                    else
-                        local orig = part:GetAttribute("Zuzi_OriginalTransparency")
-                        if orig ~= nil then part.Transparency = orig end
-                    end
-                end
-            end
-            local head = char:FindFirstChild("Head")
-            if head and head:FindFirstChild("face") then
-                local face = head.face
-                if Value then
-                    if face:GetAttribute("Zuzi_OriginalTransparency") == nil then
-                        face:SetAttribute("Zuzi_OriginalTransparency", face.Transparency)
-                    end
-                    face.Transparency = 1
+    if Features.FlyType ~= "None" and root and BodyVel and BodyGyro then
+        local cam = Camera.CFrame
+        local dir = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
+        if dir.Magnitude > 0 then dir = dir.Unit * Features.FlySpeed end
+        BodyVel.Velocity = dir
+        BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
+    end
+
+    if Features.InfiniteJump and hum and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+
+    if Features.AntiFling and root and root.AssemblyLinearVelocity.Magnitude > 150 then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    if Features.AntiDie and hum and hum.Health < hum.MaxHealth * 0.25 then
+        hum.Health = hum.MaxHealth
+    end
+
+    if Features.HitboxExtender then ApplyHitbox() end
+    if Features.ServerInvisBypass then ApplyServerInvisBypass() end
+
+    if (Features.Aimbot or Features.SilentAim) and root then
+        local targetPlr = GetClosestPlayer(Features.AimbotFOV)
+        if targetPlr and targetPlr.Character then
+            local part = targetPlr.Character:FindFirstChild(Features.AimPart) or targetPlr.Character:FindFirstChild("HumanoidRootPart")
+            if part then
+                local goal = part.Position + (part.AssemblyLinearVelocity * Features.AimbotPrediction)
+                if Features.SilentAim then
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, goal)
                 else
-                    local orig = face:GetAttribute("Zuzi_OriginalTransparency")
-                    if orig ~= nil then face.Transparency = orig end
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, goal), Features.AimbotSmooth)
                 end
             end
         end
     end
-})
 
-SelfSection:AddToggle("ServerInvisBypass", {
-    Title = "Server Invis Bypass",
-    Default = false,
-    Callback = function(Value) CONFIG.Self.ServerInvisBypass = Value end
-})
+    if Features.Piggyback then DoCarry("Piggyback") end
+    if Features.FrontCarry then DoCarry("Front") end
+    if Features.SideCarry then DoCarry("Side") end
 
-SelfSection:AddToggle("GlitchSelf", {
-    Title = "Glitch Self",
-    Default = false,
-    Callback = function(Value) CONFIG.Self.GlitchSelf = Value end
-})
-
-SelfSection:AddButton({
-    Title = "Respawn",
-    Description = "Kill and respawn your character",
-    Callback = function()
-        local char = LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.Health = 0 end
+    if Features.KnifeAura and root then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                if tRoot and (root.Position - tRoot.Position).Magnitude < Features.AuraRange then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then tool:Activate() end
+                end
+            end
         end
     end
-})
 
-SelfSection:AddButton({
-    Title = "Full Heal",
-    Description = "Restore health to max",
-    Callback = function()
-        local char = LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.Health = humanoid.MaxHealth end
+    if Features.AutoKill and tick() - lastKill > 1.3 then
+        lastKill = tick()
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        if tool then tool:Activate() end
+    end
+
+    if Features.KillTarget and Features.SelectedTarget and root then
+        local target = Players:FindFirstChild(Features.SelectedTarget)
+        if target and target.Character then
+            local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            if tRoot then
+                root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 2.6)
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then tool:Activate() end
+            end
         end
     end
-})
 
--- ==================== UTILITY TAB ====================
-local UtilitySection = Tabs.Utility:AddSection("Utility Features")
+    if Features.FlingNearest and tick() - lastFling > 0.7 then
+        lastFling = tick()
+        local closest = GetClosestPlayer(60)
+        if closest then Fling(closest) end
+    end
 
-UtilitySection:AddToggle("CoinFarm", {
-    Title = "Coin Farm",
-    Default = false,
-    Callback = function(Value) CONFIG.Utility.CoinFarm = Value end
-})
+    if Features.FlingTarget and Features.SelectedTarget and tick() - lastFling > 0.5 then
+        lastFling = tick()
+        local target = Players:FindFirstChild(Features.SelectedTarget)
+        if target then Fling(target) end
+    end
 
-UtilitySection:AddToggle("AutoCollect", {
-    Title = "Auto Collect Items",
-    Default = false,
-    Callback = function(Value) CONFIG.Utility.AutoCollect = Value end
-})
+    if Features.FlingAll and tick() - lastFling > 1.0 then
+        lastFling = tick()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then Fling(plr) end
+        end
+    end
 
-UtilitySection:AddButton({
-    Title = "Grab Gun",
-    Description = "Teleport to and grab the gun",
-    Callback = function()
-        local gun = nil
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj.Name == "GunDrop" or obj.Name == "Gun" or obj.Name:lower():find("gun") then
-                if obj:IsA("BasePart") or obj:IsA("Model") then
-                    gun = obj
+    if Features.GlitchSelf and char and tick() - lastGlitch > 0.08 then
+        lastGlitch = tick()
+        SetInvisible(true)
+        task.delay(0.05, function()
+            if Features.GlitchSelf then SetInvisible(Features.Invisible) end
+        end)
+    end
+
+    if Features.CoinFarm and root and tick() - lastFarm > 0.85 then
+        lastFarm = tick()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                local n = string.lower(obj.Name)
+                if string.find(n, "coin") or string.find(n, "money") or string.find(n, "cash") then
+                    if (root.Position - obj.Position).Magnitude < 180 then
+                        root.CFrame = CFrame.new(obj.Position + Vector3.new(0, 3.5, 0))
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    if Features.GrabGun and root then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("Tool") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "gun")) then
+                local part = obj:IsA("BasePart") and obj or obj:FindFirstChild("Handle")
+                if part and (root.Position - part.Position).Magnitude < 250 then
+                    root.CFrame = CFrame.new(part.Position + Vector3.new(0, 3.2, 0))
                     break
                 end
             end
         end
-        if gun then
-            local localChar = LocalPlayer.Character
-            local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
-            if localHRP then
-                local oldCF = localHRP.CFrame
-                localHRP.CFrame = gun:GetPivot() + Vector3.new(0, 3, 0)
-                task.wait(0.3)
-                localHRP.CFrame = oldCF
-                Notify("Utility", "Gun grabbed!", 2)
+    end
+
+    if Features.TPMurderer and currentMurderer and currentMurderer.Character and root then
+        local tRoot = currentMurderer.Character:FindFirstChild("HumanoidRootPart")
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2) end
+    end
+
+    if Features.TPSheriff and currentSheriff and currentSheriff.Character and root then
+        local tRoot = currentSheriff.Character:FindFirstChild("HumanoidRootPart")
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4.2) end
+    end
+
+    if Features.AntiAFK and tick() - lastAnti > 22 then
+        lastAnti = tick()
+        pcall(function()
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.03)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+        end)
+    end
+end)
+
+-- ================= LUNA UI =================
+
+-- HOME
+local HomeTab = Window:CreateTab({
+    Name = "Home",
+    Icon = "home",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+HomeTab:CreateSection("Welcome")
+HomeTab:CreateParagraph({
+    Text = "ZuzifyRBX loaded successfully with Luna UI.\nAll features are fully working."
+})
+
+HomeTab:CreateSection("Status")
+HomeTab:CreateParagraph({
+    Text = "Owner: " .. (isOwner and "YES - OWNER ACCESS" or "No")
+})
+HomeTab:CreateParagraph({
+    Text = "Beta: " .. (hasBeta and "UNLOCKED" or "Locked (Gamepass 1944876349)")
+})
+
+HomeTab:CreateSection("Zuzify News")
+local newsText = "Loading news..."
+pcall(function()
+    newsText = game:HttpGet("https://pastebin.com/raw/F3p7v62u")
+end)
+HomeTab:CreateParagraph({
+    Text = newsText
+})
+HomeTab:CreateButton({
+    Name = "Refresh News",
+    Callback = function()
+        local new = "Failed to load"
+        pcall(function() new = game:HttpGet("https://pastebin.com/raw/F3p7v62u") end)
+        Luna:Notification({
+            Title = "Zuzify News",
+            Content = new,
+            Icon = "notifications_active",
+            ImageSource = "Material"
+        })
+    end
+})
+
+-- VISUALS
+local VisualsTab = Window:CreateTab({
+    Name = "Visuals",
+    Icon = "visibility",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+VisualsTab:CreateSection("ESP")
+VisualsTab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Callback = function(v)
+        Features.ESP = v
+        if v then RefreshESP() else ClearAllESP() end
+    end
+})
+VisualsTab:CreateToggle({
+    Name = "Names + Role",
+    CurrentValue = true,
+    Callback = function(v) Features.ESP_Names = v RefreshESP() end
+})
+VisualsTab:CreateToggle({
+    Name = "Distance",
+    CurrentValue = true,
+    Callback = function(v) Features.ESP_Distance = v end
+})
+VisualsTab:CreateToggle({
+    Name = "Chams",
+    CurrentValue = true,
+    Callback = function(v) Features.ESP_Chams = v RefreshESP() end
+})
+VisualsTab:CreateButton({
+    Name = "Refresh ESP",
+    Callback = RefreshESP
+})
+VisualsTab:CreateButton({
+    Name = "Clear ESP",
+    Callback = function()
+        ClearAllESP()
+        Features.ESP = false
+    end
+})
+
+-- MOVEMENT
+local MovementTab = Window:CreateTab({
+    Name = "Movement",
+    Icon = "directions_run",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+MovementTab:CreateSection("Movement Options")
+MovementTab:CreateDropdown({
+    Name = "Noclip Type",
+    Options = {"None", "Normal", "Smooth", "MM2"},
+    CurrentOption = "None",
+    Callback = function(v)
+        Features.NoclipType = v
+        ApplyNoclip()
+    end
+})
+MovementTab:CreateDropdown({
+    Name = "Fly Type",
+    Options = {"None", "BodyVelocity", "Smooth"},
+    CurrentOption = "None",
+    Callback = function(v)
+        Features.FlyType = v
+        if v == "None" then CleanupFly() else SetupFly() end
+    end
+})
+MovementTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {10, 250},
+    Increment = 1,
+    CurrentValue = 60,
+    Callback = function(v) Features.FlySpeed = v end
+})
+MovementTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Callback = function(v) Features.InfiniteJump = v end
+})
+MovementTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {10, 250},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(v)
+        Features.WalkSpeed = v
+        ApplyStats()
+    end
+})
+MovementTab:CreateSlider({
+    Name = "Jump Power",
+    Range = {30, 250},
+    Increment = 1,
+    CurrentValue = 50,
+    Callback = function(v)
+        Features.JumpPower = v
+        ApplyStats()
+    end
+})
+MovementTab:CreateToggle({
+    Name = "Anti Fling",
+    CurrentValue = true,
+    Callback = function(v) Features.AntiFling = v end
+})
+MovementTab:CreateToggle({
+    Name = "Anti Die",
+    CurrentValue = false,
+    Callback = function(v) Features.AntiDie = v end
+})
+MovementTab:CreateToggle({
+    Name = "Hitbox Extender",
+    CurrentValue = false,
+    Callback = function(v)
+        Features.HitboxExtender = v
+        ApplyHitbox()
+    end
+})
+MovementTab:CreateSlider({
+    Name = "Hitbox Size",
+    Range = {3, 25},
+    Increment = 1,
+    CurrentValue = 9,
+    Callback = function(v)
+        Features.HitboxSize = v
+        if Features.HitboxExtender then ApplyHitbox() end
+    end
+})
+MovementTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = true,
+    Callback = function(v) Features.AntiAFK = v end
+})
+
+-- COMBAT
+local CombatTab = Window:CreateTab({
+    Name = "Combat",
+    Icon = "swords",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+CombatTab:CreateSection("Aimbot & Aura")
+CombatTab:CreateToggle({
+    Name = "Aimbot",
+    CurrentValue = false,
+    Callback = function(v) Features.Aimbot = v end
+})
+CombatTab:CreateToggle({
+    Name = "Silent Aim",
+    CurrentValue = false,
+    Callback = function(v) Features.SilentAim = v end
+})
+CombatTab:CreateSlider({
+    Name = "FOV",
+    Range = {50, 450},
+    Increment = 1,
+    CurrentValue = 230,
+    Callback = function(v) Features.AimbotFOV = v end
+})
+CombatTab:CreateSlider({
+    Name = "Smoothness",
+    Range = {5, 50},
+    Increment = 1,
+    CurrentValue = 13,
+    Callback = function(v) Features.AimbotSmooth = v / 100 end
+})
+CombatTab:CreateDropdown({
+    Name = "Aim Part",
+    Options = {"HumanoidRootPart", "Head", "UpperTorso"},
+    CurrentOption = "HumanoidRootPart",
+    Callback = function(v) Features.AimPart = v end
+})
+CombatTab:CreateToggle({
+    Name = "Auto Kill",
+    CurrentValue = false,
+    Callback = function(v) Features.AutoKill = v end
+})
+CombatTab:CreateToggle({
+    Name = "Knife Aura",
+    CurrentValue = false,
+    Callback = function(v) Features.KnifeAura = v end
+})
+CombatTab:CreateSlider({
+    Name = "Aura Range",
+    Range = {6, 35},
+    Increment = 1,
+    CurrentValue = 15,
+    Callback = function(v) Features.AuraRange = v end
+})
+
+CombatTab:CreateSection("Target")
+CombatTab:CreateDropdown({
+    Name = "Select Player",
+    Options = PlayerList,
+    CurrentOption = PlayerList[1] or "None",
+    Callback = function(v) Features.SelectedTarget = v end
+})
+CombatTab:CreateButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        PlayerList = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                table.insert(PlayerList, plr.Name)
             end
-        else
-            Notify("Utility", "Gun not found on map.", 2)
         end
+        Luna:Notification({
+            Title = "Players",
+            Content = "Player list refreshed",
+            Icon = "person",
+            ImageSource = "Material"
+        })
     end
 })
+CombatTab:CreateToggle({
+    Name = "Kill Selected",
+    CurrentValue = false,
+    Callback = function(v) Features.KillTarget = v end
+})
 
-UtilitySection:AddButton({
-    Title = "TP to Murderer",
-    Description = "Find and teleport to murderer",
-    Callback = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local backpack = player:FindFirstChild("Backpack")
-                local char = player.Character
-                local hasKnife = (backpack and (backpack:FindFirstChild("Knife") or backpack:FindFirstChild("KnifeTool"))) 
-                    or (char and (char:FindFirstChild("Knife") or char:FindFirstChild("KnifeTool")))
-                if hasKnife then
-                    local targetHRP = char:FindFirstChild("HumanoidRootPart")
-                    local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if targetHRP and localHRP then
-                        localHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 5)
-                        Notify("Utility", "Teleported to murderer: " .. player.Name, 3)
-                        return
-                    end
-                end
-            end
-        end
-        Notify("Utility", "No murderer found in server.", 2)
+-- CARRY
+local CarryTab = Window:CreateTab({
+    Name = "Carry",
+    Icon = "groups",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+CarryTab:CreateSection("Carry Styles")
+CarryTab:CreateToggle({
+    Name = "Piggyback",
+    CurrentValue = false,
+    Callback = function(v) Features.Piggyback = v end
+})
+CarryTab:CreateToggle({
+    Name = "Front Carry",
+    CurrentValue = false,
+    Callback = function(v) Features.FrontCarry = v end
+})
+CarryTab:CreateToggle({
+    Name = "Side Carry",
+    CurrentValue = false,
+    Callback = function(v) Features.SideCarry = v end
+})
+
+-- TROLL
+local TrollTab = Window:CreateTab({
+    Name = "Troll",
+    Icon = "dangerous",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+TrollTab:CreateSection("Fling")
+TrollTab:CreateToggle({
+    Name = "Fling Nearest",
+    CurrentValue = false,
+    Callback = function(v) Features.FlingNearest = v end
+})
+TrollTab:CreateToggle({
+    Name = "Fling Selected",
+    CurrentValue = false,
+    Callback = function(v) Features.FlingTarget = v end
+})
+TrollTab:CreateToggle({
+    Name = "Fling All",
+    CurrentValue = false,
+    Callback = function(v) Features.FlingAll = v end
+})
+
+-- SELF
+local SelfTab = Window:CreateTab({
+    Name = "Self",
+    Icon = "person",
+    ImageSource = "Material",
+    ShowTitle = true
+})
+
+SelfTab:CreateSection("Self Options")
+SelfTab:CreateToggle({
+    Name = "Invisible",
+    CurrentValue = false,
+    Callback = function(v)
+        Features.Invisible = v
+        SetInvisible(v)
     end
 })
-
-UtilitySection:AddButton({
-    Title = "TP to Sheriff",
-    Description = "Find and teleport to sheriff",
-    Callback = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local backpack = player:FindFirstChild("Backpack")
-                local char = player.Character
-                local hasGun = (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("GunTool"))) 
-                    or (char and (char:FindFirstChild("Gun") or char:FindFirstChild("GunTool")))
-                if hasGun then
-                    local targetHRP = char:FindFirstChild("HumanoidRootPart")
-                    local localHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if targetHRP and localHRP then
-                        localHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 5)
-                        Notify("Utility", "Teleported to sheriff: " .. player.Name, 3)
-                        return
-                    end
-                end
-            end
-        end
-        Notify("Utility", "No sheriff found in server.", 2)
+SelfTab:CreateToggle({
+    Name = "Server Invis Bypass",
+    CurrentValue = false,
+    Callback = function(v)
+        Features.ServerInvisBypass = v
+        if v then ApplyServerInvisBypass() end
     end
 })
-
-UtilitySection:AddButton({
-    Title = "Collect All Coins",
-    Description = "One-time coin collection sweep",
-    Callback = function()
-        local localChar = LocalPlayer.Character
-        local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
-        if not localHRP then return end
-        local count = 0
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("credit") or obj.Name:lower():find("collect")) then
-                localHRP.CFrame = obj.CFrame + Vector3.new(0, 2, 0)
-                task.wait(0.05)
-                count = count + 1
-            end
-        end
-        Notify("Utility", "Collected " .. count .. " items!", 2)
-    end
+SelfTab:CreateToggle({
+    Name = "Glitch Self",
+    CurrentValue = false,
+    Callback = function(v) Features.GlitchSelf = v end
 })
 
--- ==================== TELEPORTS TAB ====================
-local TeleportSection = Tabs.Teleports:AddSection("Map Teleports")
-
-local function SafeTeleport(cframe)
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = cframe
-        Notify("Teleport", "Teleported successfully!", 2)
-    else
-        Notify("Error", "Character not found!", 2)
-    end
-end
-
-TeleportSection:AddButton({
-    Title = "Lobby",
-    Description = "Teleport to Lobby spawn",
-    Callback = function()
-        local spawnLoc = Workspace:FindFirstChild("SpawnLocation") or Workspace:FindFirstChild("LobbySpawn")
-        if spawnLoc and spawnLoc:IsA("BasePart") then
-            SafeTeleport(spawnLoc.CFrame + Vector3.new(0, 5, 0))
-        else
-            SafeTeleport(CFrame.new(0, 50, 0))
-        end
-    end
+-- UTILITY
+local UtilityTab = Window:CreateTab({
+    Name = "Utility",
+    Icon = "build",
+    ImageSource = "Material",
+    ShowTitle = true
 })
 
-TeleportSection:AddButton({
-    Title = "Arena",
-    Description = "Teleport to Arena",
-    Callback = function() SafeTeleport(CFrame.new(100, 50, 100)) end
+UtilityTab:CreateSection("Utility")
+UtilityTab:CreateToggle({
+    Name = "Coin Farm",
+    CurrentValue = false,
+    Callback = function(v) Features.CoinFarm = v end
+})
+UtilityTab:CreateToggle({
+    Name = "Grab Gun",
+    CurrentValue = false,
+    Callback = function(v) Features.GrabGun = v end
+})
+UtilityTab:CreateToggle({
+    Name = "TP to Murderer",
+    CurrentValue = false,
+    Callback = function(v) Features.TPMurderer = v end
+})
+UtilityTab:CreateToggle({
+    Name = "TP to Sheriff",
+    CurrentValue = false,
+    Callback = function(v) Features.TPSheriff = v end
 })
 
-TeleportSection:AddButton({
-    Title = "Bank",
-    Description = "Teleport to Bank",
-    Callback = function() SafeTeleport(CFrame.new(200, 50, 200)) end
+-- TELEPORTS
+local TeleportsTab = Window:CreateTab({
+    Name = "Teleports",
+    Icon = "place",
+    ImageSource = "Material",
+    ShowTitle = true
 })
 
-TeleportSection:AddButton({
-    Title = "Hotel",
-    Description = "Teleport to Hotel",
-    Callback = function() SafeTeleport(CFrame.new(300, 50, 300)) end
+TeleportsTab:CreateSection("Quick Teleports")
+TeleportsTab:CreateButton({
+    Name = "Lobby",
+    Callback = function() Teleport(Vector3.new(0, 10, 0)) end
+})
+TeleportsTab:CreateButton({
+    Name = "Arena",
+    Callback = function() Teleport(Vector3.new(0, 5, 50)) end
+})
+TeleportsTab:CreateButton({
+    Name = "Bank",
+    Callback = function() Teleport(Vector3.new(0, 5, 0)) end
+})
+TeleportsTab:CreateButton({
+    Name = "Hotel",
+    Callback = function() Teleport(Vector3.new(50, 5, 0)) end
+})
+TeleportsTab:CreateButton({
+    Name = "Hospital",
+    Callback = function() Teleport(Vector3.new(-50, 5, 0)) end
 })
 
-TeleportSection:AddButton({
-    Title = "Hospital",
-    Description = "Teleport to Hospital",
-    Callback = function() SafeTeleport(CFrame.new(400, 50, 400)) end
+-- SETTINGS
+local SettingsTab = Window:CreateTab({
+    Name = "Settings",
+    Icon = "settings",
+    ImageSource = "Material",
+    ShowTitle = true
 })
 
-local CustomTPSection = Tabs.Teleports:AddSection("Custom Coordinates")
-
-CustomTPSection:AddInput("TP_X", {
-    Title = "X Coordinate",
-    Default = "0",
-    Placeholder = "X...",
-    Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        CONFIG.Teleports.CustomX = tonumber(Value) or 0
-    end
-})
-
-CustomTPSection:AddInput("TP_Y", {
-    Title = "Y Coordinate",
-    Default = "50",
-    Placeholder = "Y...",
-    Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        CONFIG.Teleports.CustomY = tonumber(Value) or 50
-    end
-})
-
-CustomTPSection:AddInput("TP_Z", {
-    Title = "Z Coordinate",
-    Default = "0",
-    Placeholder = "Z...",
-    Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        CONFIG.Teleports.CustomZ = tonumber(Value) or 0
-    end
-})
-
-CustomTPSection:AddButton({
-    Title = "Teleport to Coordinates",
-    Description = "TP to custom X, Y, Z",
-    Callback = function()
-        SafeTeleport(CFrame.new(CONFIG.Teleports.CustomX, CONFIG.Teleports.CustomY, CONFIG.Teleports.CustomZ))
-    end
-})
-
-CustomTPSection:AddButton({
-    Title = "Teleport to Random Player",
-    Description = "TP to a random player",
-    Callback = function()
-        local others = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                table.insert(others, p)
-            end
-        end
-        if #others > 0 then
-            local target = others[math.random(1, #others)]
-            SafeTeleport(target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5))
-            Notify("Teleport", "Teleported to " .. target.Name, 2)
-        else
-            Notify("Teleport", "No other players found!", 2)
-        end
-    end
-})
-
--- ==================== SETTINGS TAB ====================
-local SettingsSection = Tabs.Settings:AddSection("Script Settings")
-
-SettingsSection:AddButton({
-    Title = "Rejoin Server",
-    Description = "Rejoin the current server",
+SettingsTab:CreateSection("Server")
+SettingsTab:CreateButton({
+    Name = "Rejoin",
     Callback = function()
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
     end
 })
-
-SettingsSection:AddButton({
-    Title = "Server Hop",
-    Description = "Join a different server",
+SettingsTab:CreateButton({
+    Name = "Server Hop",
     Callback = function()
-        local success, result = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100", true))
-        end)
-        if success and result and result.data then
-            for _, server in ipairs(result.data) do
-                if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                    TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-                    return
+        pcall(function()
+            local data = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+            local list = {}
+            for _, s in ipairs(data.data or {}) do
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    table.insert(list, s.id)
                 end
             end
-        end
-        Notify("Server Hop", "Could not find a suitable server!", 2)
-    end
-})
-
-SettingsSection:AddDropdown("ThemeSelector", {
-    Title = "UI Theme",
-    Values = {"Dark", "Light", "Darker", "Aqua", "Amethyst", "Rose"},
-    Multi = false,
-    Default = "Dark",
-    Callback = function(Value)
-        CONFIG.Settings.Theme = Value
-        Fluent:SetTheme(Value)
-    end
-})
-
-SettingsSection:AddButton({
-    Title = "Save Configuration",
-    Description = "Save current settings to file",
-    Callback = function()
-        local saveData = {
-            ESP = {
-                Boxes = CONFIG.ESP.Boxes,
-                Names = CONFIG.ESP.Names,
-                Distance = CONFIG.ESP.Distance,
-                Chams = CONFIG.ESP.Chams,
-                Tracers = CONFIG.ESP.Tracers,
-                MaxDistance = CONFIG.ESP.MaxDistance
-            },
-            Movement = {
-                WalkSpeed = CONFIG.Movement.WalkSpeed,
-                JumpPower = CONFIG.Movement.JumpPower,
-                FlySpeed = CONFIG.Movement.FlySpeed
-            },
-            Combat = {
-                FOV = CONFIG.Combat.FOV,
-                Smoothness = CONFIG.Combat.Smoothness,
-                AimPart = CONFIG.Combat.AimPart
-            },
-            Troll = {
-                FlingPower = CONFIG.Troll.FlingPower
-            },
-            Settings = {
-                Theme = CONFIG.Settings.Theme
-            }
-        }
-        local encoded = HttpService:JSONEncode(saveData)
-        SafeCall(function()
-            writefile("ZuzifyRBX_Config.json", encoded)
-            Notify("Settings", "Configuration saved!", 2)
+            if #list > 0 then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, list[math.random(1, #list)], LocalPlayer)
+            end
         end)
     end
 })
 
-SettingsSection:AddButton({
-    Title = "Load Configuration",
-    Description = "Load saved settings from file",
-    Callback = function()
-        local success, data = pcall(function() return readfile("ZuzifyRBX_Config.json") end)
-        if success and data then
-            local decoded = HttpService:JSONDecode(data)
-            if decoded.ESP then
-                CONFIG.ESP.Boxes = decoded.ESP.Boxes or false
-                CONFIG.ESP.Names = decoded.ESP.Names or false
-                CONFIG.ESP.Distance = decoded.ESP.Distance or false
-                CONFIG.ESP.Chams = decoded.ESP.Chams or false
-                CONFIG.ESP.Tracers = decoded.ESP.Tracers or false
-                CONFIG.ESP.MaxDistance = decoded.ESP.MaxDistance or 1000
-            end
-            if decoded.Movement then
-                CONFIG.Movement.WalkSpeed = decoded.Movement.WalkSpeed or 16
-                CONFIG.Movement.JumpPower = decoded.Movement.JumpPower or 50
-                CONFIG.Movement.FlySpeed = decoded.Movement.FlySpeed or 50
-            end
-            if decoded.Combat then
-                CONFIG.Combat.FOV = decoded.Combat.FOV or 100
-                CONFIG.Combat.Smoothness = decoded.Combat.Smoothness or 0.5
-                CONFIG.Combat.AimPart = decoded.Combat.AimPart or "Head"
-            end
-            if decoded.Troll then
-                CONFIG.Troll.FlingPower = decoded.Troll.FlingPower or 1000
-            end
-            if decoded.Settings and decoded.Settings.Theme then
-                CONFIG.Settings.Theme = decoded.Settings.Theme
-                Fluent:SetTheme(decoded.Settings.Theme)
-            end
-            Notify("Settings", "Configuration loaded!", 2)
-        else
-            Notify("Settings", "No saved config found!", 2)
-        end
-    end
+Luna:Notification({
+    Title = "ZuzifyRBX",
+    Content = "Luna version loaded successfully" .. (isOwner and " | OWNER" or ""),
+    Icon = "check_circle",
+    ImageSource = "Material"
 })
 
-SettingsSection:AddButton({
-    Title = "Reset All Settings",
-    Description = "Reset to default values",
-    Callback = function()
-        CONFIG.ESP.Enabled = false
-        CONFIG.ESP.Boxes = false
-        CONFIG.ESP.Names = false
-        CONFIG.ESP.Distance = false
-        CONFIG.ESP.Chams = false
-        CONFIG.ESP.Tracers = false
-        CONFIG.Movement.Noclip = false
-        CONFIG.Movement.Fly = false
-        CONFIG.Movement.InfiniteJump = false
-        CONFIG.Combat.Aimbot = false
-        CONFIG.Combat.SilentAim = false
-        CONFIG.Combat.AutoKill = false
-        CONFIG.Combat.KnifeAura = false
-        CONFIG.Troll.FlingNearest = false
-        CONFIG.Troll.FlingAll = false
-        CONFIG.Self.Invisible = false
-        CONFIG.Self.ServerInvisBypass = false
-        CONFIG.Self.GlitchSelf = false
-        CONFIG.Utility.CoinFarm = false
-        CONFIG.Utility.AutoCollect = false
-        Notify("Settings", "All settings reset to defaults!", 2)
-    end
-})
-
-SettingsSection:AddButton({
-    Title = "Destroy UI",
-    Description = "Close ZuzifyRBX completely",
-    Callback = function()
-        for _, data in pairs(ESPObjects) do
-            pcall(function() data.Box:Remove() end)
-            pcall(function() data.NameLabel:Remove() end)
-            pcall(function() data.DistanceLabel:Remove() end)
-            pcall(function() data.Tracer:Remove() end)
-            pcall(function() if data.Cham then data.Cham:Destroy() end end)
-        end
-        StopFly()
-        Window:Destroy()
-    end
-})
-
--- ==================== MAIN RENDERSTEPPED LOOP ====================
-RunService.RenderStepped:Connect(function()
-    if not CONFIG.IsAuthenticated and not CONFIG.IsOwner then return end
-    
-    local char = LocalPlayer.Character
-    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    -- ESP
-    UpdateESP()
-    
-    -- Fly
-    if CONFIG.Movement.Fly then
-        if not FlyBodyGyro then StartFly() end
-        if FlyBodyGyro and FlyBodyVelocity and hrp then
-            FlyBodyGyro.CFrame = Camera.CFrame
-            local moveDir = Vector3.zero
-            
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDir = moveDir + Camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDir = moveDir - Camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDir = moveDir - Camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDir = moveDir + Camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDir = moveDir + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                moveDir = moveDir - Vector3.new(0, 1, 0)
-            end
-            
-            if moveDir.Magnitude > 0 then
-                moveDir = moveDir.Unit * CONFIG.Movement.FlySpeed
-            end
-            
-            FlyBodyVelocity.Velocity = moveDir
-        end
-    else
-        if FlyBodyGyro then StopFly() end
-    end
-    
-    -- Noclip
-    if CONFIG.Movement.Noclip and char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
-    
-    -- Anti Fling
-    if CONFIG.Movement.AntiFling and hrp then
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        hrp.Velocity = Vector3.zero
-    end
-    
-    -- Anti Die
-    if CONFIG.Movement.AntiDie and humanoid then
-        if humanoid.Health <= 0 then
-            humanoid.Health = humanoid.MaxHealth
-        end
-    end
-    
-    -- Hitbox Extender
-    if CONFIG.Movement.HitboxExtender then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local head = player.Character:FindFirstChild("Head")
-                if head and head.Size ~= Vector3.new(10, 10, 10) then
-                    head.Size = Vector3.new(10, 10, 10)
-                    head.Transparency = 0.7
-                    head.CanCollide = false
-                end
-            end
-        end
-    end
-    
-    -- WalkSpeed / JumpPower enforcement
-    if humanoid then
-        if humanoid.WalkSpeed ~= CONFIG.Movement.WalkSpeed then
-            humanoid.WalkSpeed = CONFIG.Movement.WalkSpeed
-        end
-        if humanoid.JumpPower ~= CONFIG.Movement.JumpPower then
-            humanoid.JumpPower = CONFIG.Movement.JumpPower
-        end
-    end
-    
-    -- Aimbot
-    if CONFIG.Combat.Aimbot then
-        local target = GetClosestPlayerToMouse()
-        if target and target.Character then
-            local aimPart = target.Character:FindFirstChild(CONFIG.Combat.AimPart) or target.Character:FindFirstChild("Head")
-            if aimPart then
-                local targetPos = Camera:WorldToViewportPoint(aimPart.Position)
-                local mousePos = Vector2.new(Mouse.X, Mouse.Y)
-                local targetVector = Vector2.new(targetPos.X, targetPos.Y)
-                local smoothFactor = math.clamp(1 - CONFIG.Combat.Smoothness, 0.01, 1)
-                local newPos = mousePos:Lerp(targetVector, smoothFactor)
-                mousemoverel(newPos.X - mousePos.X, newPos.Y - mousePos.Y)
-            end
-        end
-    end
-    
-    -- Auto Kill
-    if CONFIG.Combat.AutoKill and CONFIG.Combat.SelectedPlayer then
-        local target = CONFIG.Combat.SelectedPlayer
-        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and hrp then
-            local targetHRP = target.Character.HumanoidRootPart
-            local dist = (targetHRP.Position - hrp.Position).Magnitude
-            if dist < 15 then
-                hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2)
-            end
-        end
-    end
-    
-    -- Knife Aura
-    if CONFIG.Combat.KnifeAura then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-                local targetHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
-                if targetHRP and targetHumanoid and hrp and (targetHRP.Position - hrp.Position).Magnitude < 12 then
-                    targetHumanoid.Health = 0
-                end
-            end
-        end
-    end
-    
-    -- Fling Nearest
-    if CONFIG.Troll.FlingNearest then
-        local nearest = nil
-        local shortestDist = math.huge
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-                if targetHRP and hrp then
-                    local dist = (targetHRP.Position - hrp.Position).Magnitude
-                    if dist < shortestDist and dist < 50 then
-                        shortestDist = dist
-                        nearest = targetHRP
-                    end
-                end
-            end
-        end
-        if nearest then
-            local bv = Instance.new("BodyVelocity")
-            bv.Velocity = Vector3.new(
-                math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower),
-                CONFIG.Troll.FlingPower,
-                math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower)
-            )
-            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            bv.Parent = nearest
-            game:GetService("Debris"):AddItem(bv, 0.1)
-        end
-    end
-    
-    -- Fling All
-    if CONFIG.Troll.FlingAll then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-                if targetHRP then
-                    local bv = Instance.new("BodyVelocity")
-                    bv.Velocity = Vector3.new(
-                        math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower),
-                        CONFIG.Troll.FlingPower,
-                        math.random(-CONFIG.Troll.FlingPower, CONFIG.Troll.FlingPower)
-                    )
-                    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                    bv.Parent = targetHRP
-                    game:GetService("Debris"):AddItem(bv, 0.1)
-                end
-            end
-        end
-    end
-    
-    -- Carry Logic
-    if (CONFIG.Carry.Piggyback or CONFIG.Carry.FrontCarry or CONFIG.Carry.SideCarry) and CONFIG.Carry.TargetPlayer then
-        local target = CONFIG.Carry.TargetPlayer
-        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and hrp then
-            local targetHRP = target.Character.HumanoidRootPart
-            local offset = CFrame.new(0, 0, 0)
-            if CONFIG.Carry.Piggyback then
-                offset = CFrame.new(0, 2.5, 1)
-            elseif CONFIG.Carry.FrontCarry then
-                offset = CFrame.new(0, 0, -2)
-            elseif CONFIG.Carry.SideCarry then
-                offset = CFrame.new(2, 0, 0)
-            end
-            targetHRP.CFrame = hrp.CFrame * offset
-            targetHRP.AssemblyLinearVelocity = Vector3.zero
-            targetHRP.Velocity = Vector3.zero
-        end
-    end
-    
-    -- Server Invis Bypass
-    if CONFIG.Self.ServerInvisBypass and char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.LocalTransparencyModifier = 0
-            end
-        end
-    end
-    
-    -- Glitch Self
-    if CONFIG.Self.GlitchSelf and hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-2, 2) * 0.1, 0, math.random(-2, 2) * 0.1)
-    end
-    
-    -- Coin Farm
-    if CONFIG.Utility.CoinFarm and hrp then
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("collectible")) then
-                if (obj.Position - hrp.Position).Magnitude < 500 then
-                    hrp.CFrame = obj.CFrame + Vector3.new(0, 2, 0)
-                    task.wait(0.08)
-                end
-            end
-        end
-    end
-    
-    -- Auto Collect
-    if CONFIG.Utility.AutoCollect and hrp then
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("TouchTransmitter") and obj.Parent and obj.Parent:IsA("BasePart") then
-                if (obj.Parent.Position - hrp.Position).Magnitude < 10 then
-                    firetouchinterest(hrp, obj.Parent, 0)
-                    firetouchinterest(hrp, obj.Parent, 1)
-                end
-            end
-        end
-    end
-end)
-
--- ==================== EVENT CONNECTIONS ====================
-UserInputService.JumpRequest:Connect(function()
-    if CONFIG.Movement.InfiniteJump and (CONFIG.IsAuthenticated or CONFIG.IsOwner) then
-        local char = LocalPlayer.Character
-        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
-LocalPlayer.Idled:Connect(function()
-    if CONFIG.Movement.AntiAFK then
-        VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
-    end
-end)
-
-LocalPlayer.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = CONFIG.Movement.WalkSpeed
-        humanoid.JumpPower = CONFIG.Movement.JumpPower
-    end
-    if CONFIG.Movement.Fly then
-        task.wait(0.3)
-        StartFly()
-    end
-    if CONFIG.Self.Invisible then
-        task.wait(0.5)
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                part:SetAttribute("Zuzi_OriginalTransparency", part.Transparency)
-                part.Transparency = 1
-            end
-            if part:IsA("Decal") or part:IsA("Texture") then
-                part:SetAttribute("Zuzi_OriginalTransparency", part.Transparency)
-                part.Transparency = 1
-            end
-        end
-        local head = char:FindFirstChild("Head")
-        if head and head:FindFirstChild("face") then
-            head.face:SetAttribute("Zuzi_OriginalTransparency", head.face.Transparency)
-            head.face.Transparency = 1
-        end
-    end
-end)
-
--- ==================== FINALIZE ====================
-Window:SelectTab(1)
-
-print("=================================================")
-print("  ZuzifyRBX - Script Loaded Successfully")
-print("  User: " .. LocalPlayer.Name .. " (ID: " .. LocalPlayer.UserId .. ")")
-print("  Owner: " .. tostring(CONFIG.IsOwner))
-print("  Beta: " .. tostring(CONFIG.HasBeta))
-print("  Authenticated: " .. tostring(CONFIG.IsAuthenticated))
-print("  Fluent UI: Modded Pro")
-print("  Silent Aim Hooked: " .. tostring(SilentAimHooked))
-print("  Status: All systems operational")
-print("=================================================")
-
-Notify("ZuzifyRBX Loaded", "Welcome " .. LocalPlayer.Name .. "! All features are active and ready.", 5)
+print("ZuzifyRBX Luna Edition loaded | Owner:", isOwner, "| Beta:", hasBeta)
