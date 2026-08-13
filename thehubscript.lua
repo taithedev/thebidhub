@@ -21,7 +21,7 @@ local Camera = workspace.CurrentCamera
 
 -- ================= LINKS =================
 local RANK_PASTEBIN = "https://pastebin.com/raw/5Vq8Urk6" -- << put new rank pastebin here
-local PASSWORD_PASTEBIN = "https://pastebin.com/raw/YOUR_PASSWORD_PASTEBIN" -- << password only pastebin
+local PASSWORD_PASTEBIN = "https://pastebin.com/raw/fC0MCVkC" -- << password only pastebin
 local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
 
 -- ================= LOAD PASSWORD =================
