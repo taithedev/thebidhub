@@ -1,9 +1,9 @@
+
 --[[
-    ZuzifyRBX - Improved Final Build
+    ZuzifyRBX - Fully Fixed Rank System Build
     Ranks: https://pastebin.com/raw/5Vq8Urk6
     Password: https://pastebin.com/raw/fC0MCVkC
     News: https://pastebin.com/raw/sWSkNRcu
-    No Game Selector
 ]]
 
 local Players = game:GetService("Players")
@@ -28,10 +28,7 @@ local function SafeHttpGet(url)
     local success, result = pcall(function()
         return game:HttpGet(url)
     end)
-    if success then
-        return result
-    end
-    return nil
+    return success and result or nil
 end
 
 -- ================= LOAD PASSWORD =================
@@ -41,7 +38,7 @@ if pwData and pwData:match("%S") then
     CORRECT_PASSWORD = pwData:match("^%s*(.-)%s*$")
 end
 
--- ================= LOAD RANKS + BLACKLIST =================
+-- ================= RANK SYSTEM (FIXED) =================
 local RankData = {}
 local Blacklist = {}
 local CurrentRank = "User"
@@ -50,30 +47,46 @@ local NeedsPassword = true
 
 local function LoadRanks()
     local result = SafeHttpGet(RANK_PASTEBIN)
-    if not result then return end
+    if not result then
+        warn("[ZuzifyRBX] Could not load ranks")
+        return
+    end
 
     local inBlacklist = false
+
     for line in result:gmatch("[^\r\n]+") do
         line = line:match("^%s*(.-)%s*$") or ""
+
         if line == "" then
-            -- skip
+            -- skip empty
         elseif line:sub(1, 2) == "--" then
             if line:lower():find("blacklist") then
                 inBlacklist = true
             end
         elseif inBlacklist then
-            if line:match("%S") then
+            if line ~= "" then
                 table.insert(Blacklist, line:lower())
             end
         else
-            local rank, uid, username, perms, needpass = line:match("([^|]+)|([^|]+)|([^|]+)|([^|]+)|([^|]+)")
-            if rank and uid and username and perms and needpass then
+            -- Parse: RankName|UserId|Username|PermLevel|NeedsPassword
+            local parts = {}
+            for part in line:gmatch("([^|]+)") do
+                table.insert(parts, part:match("^%s*(.-)%s*$"))
+            end
+
+            if #parts >= 5 then
+                local rank = parts[1]
+                local uid = tonumber(parts[2]) or 0
+                local username = parts[3]:lower()
+                local perms = tonumber(parts[4]) or 1
+                local needpass = parts[5]:lower() == "true"
+
                 table.insert(RankData, {
                     Rank = rank,
-                    UserId = tonumber(uid) or 0,
-                    Username = username:lower(),
-                    Perms = tonumber(perms) or 1,
-                    NeedsPassword = needpass:lower() == "true"
+                    UserId = uid,
+                    Username = username,
+                    Perms = perms,
+                    NeedsPassword = needpass
                 })
             end
         end
@@ -82,6 +95,7 @@ end
 
 pcall(LoadRanks)
 
+-- Blacklist check
 local function IsBlacklisted()
     local name = LocalPlayer.Name:lower()
     local uid = tostring(LocalPlayer.UserId)
@@ -95,23 +109,28 @@ end
 
 if IsBlacklisted() then
     pcall(function()
-        LocalPlayer:Kick("Blacklisted from ZuzifyRBX")
+        LocalPlayer:Kick("You are blacklisted from ZuzifyRBX")
     end)
     return
 end
 
+-- Get rank
 local function GetPlayerRank()
     local name = LocalPlayer.Name:lower()
     local uid = LocalPlayer.UserId
+
     for _, data in ipairs(RankData) do
-        if (data.UserId ~= 0 and data.UserId == uid) or data.Username == name then
+        if (data.UserId ~= 0 and data.UserId == uid) or (data.Username ~= "" and data.Username == name) then
             return data.Rank, data.Perms, data.NeedsPassword
         end
     end
+
     return "User", 1, true
 end
 
 CurrentRank, CurrentPerms, NeedsPassword = GetPlayerRank()
+
+print("[ZuzifyRBX] Rank loaded:", CurrentRank, "| Perms:", CurrentPerms, "| NeedsPassword:", NeedsPassword)
 
 -- ================= PASSWORD GUI =================
 local passwordPassed = not NeedsPassword
@@ -215,7 +234,7 @@ Modal = modalResult
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
-    SubTitle = "OLED • by Tai",
+    SubTitle = "OLED • Rank System Fixed",
     Size = UDim2.fromOffset(620, 520),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
@@ -896,7 +915,7 @@ end)
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
-    Title = "ZuzifyRBX Improved Build",
+    Title = "ZuzifyRBX Fixed Build",
     Description = "Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
     Callback = function() end
 })
@@ -1055,9 +1074,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "Improved Build loaded | Rank: " .. CurrentRank,
+    Description = "Rank system fixed | Rank: " .. CurrentRank,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX Improved Build | Rank:", CurrentRank, "| Perms:", CurrentPerms)
+print("ZuzifyRBX Fully Fixed | Rank:", CurrentRank, "| Perms:", CurrentPerms, "| NeedsPassword:", NeedsPassword)
