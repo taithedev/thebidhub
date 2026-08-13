@@ -1,9 +1,10 @@
 --[[
-    ZuzifyRBX - Full Script
-    Ranks loaded from Pastebin
-    Everyone needs password (including Owner)
-    UI: Modal
-    Password: password
+    ZuzifyRBX - Full Final Build
+    Ranks: https://pastebin.com/raw/6i1LFAPS
+    Password from Pastebin
+    OLED Dark Theme
+    Better Fling types
+    Unlock Beta button (sends username to webhook)
 ]]
 
 local Players = game:GetService("Players")
@@ -12,15 +13,26 @@ local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local MarketplaceService = game:GetService("MarketplaceService")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ================= PASTEBIN RANK SYSTEM =================
-local RANK_PASTEBIN = "https://pastebin.com/raw/6i1LFAPS" -- << PUT YOUR RAW LINK HERE
+-- ================= LINKS (CHANGE THESE) =================
+local RANK_PASTEBIN = "https://pastebin.com/raw/6i1LFAPS"
+local PASSWORD_PASTEBIN = "https://pastebin.com/raw/c50HTUHM" -- << put your password pastebin raw link
+local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0" -- << put your webhook here
 
+-- ================= LOAD PASSWORD =================
+local CORRECT_PASSWORD = "password"
+pcall(function()
+    local pw = game:HttpGet(PASSWORD_PASTEBIN)
+    if pw and pw:match("%S") then
+        CORRECT_PASSWORD = pw:match("^%s*(.-)%s*$")
+    end
+end)
+
+-- ================= LOAD RANKS =================
 local RankData = {}
 local CurrentRank = "User"
 local CurrentPerms = 1
@@ -29,21 +41,16 @@ local function LoadRanks()
     local success, result = pcall(function()
         return game:HttpGet(RANK_PASTEBIN)
     end)
-
-    if not success or not result then
-        warn("[ZuzifyRBX] Failed to load ranks from Pastebin")
-        return
-    end
+    if not success or not result then return end
 
     for line in result:gmatch("[^\r\n]+") do
-        -- Skip comments and empty lines
         if not line:match("^%s*%-%-") and line:match("%S") then
             local rank, uid, username, perms = line:match("([^|]+)|([^|]+)|([^|]+)|([^|]+)")
             if rank and uid and username and perms then
                 table.insert(RankData, {
                     Rank = rank:match("^%s*(.-)%s*$"),
                     UserId = tonumber(uid) or 0,
-                    Username = username:lower():match("^%s*(.-)%s*$"),
+                    Username = tostring(username):lower():match("^%s*(.-)%s*$"),
                     Perms = tonumber(perms) or 1
                 })
             end
@@ -56,7 +63,6 @@ LoadRanks()
 local function GetPlayerRank()
     local name = LocalPlayer.Name:lower()
     local uid = LocalPlayer.UserId
-
     for _, data in ipairs(RankData) do
         if (data.UserId ~= 0 and data.UserId == uid) or data.Username == name then
             return data.Rank, data.Perms
@@ -67,8 +73,7 @@ end
 
 CurrentRank, CurrentPerms = GetPlayerRank()
 
--- ================= EVERYONE NEEDS PASSWORD =================
-local CORRECT_PASSWORD = "password"
+-- ================= PASSWORD GUI (EVERYONE) =================
 local passwordPassed = false
 
 do
@@ -80,21 +85,21 @@ do
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 420, 0, 240)
     frame.Position = UDim2.new(0.5, -210, 0.5, -120)
-    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    frame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
     frame.BorderSizePixel = 0
     frame.Parent = gui
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(0, 220, 180)
-    stroke.Thickness = 1.6
+    stroke.Color = Color3.fromRGB(0, 200, 160)
+    stroke.Thickness = 1.4
     stroke.Parent = frame
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 42)
     title.BackgroundTransparency = 1
     title.Text = "ZuzifyRBX"
-    title.TextColor3 = Color3.fromRGB(140, 255, 230)
+    title.TextColor3 = Color3.fromRGB(0, 220, 180)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 24
     title.Parent = frame
@@ -104,7 +109,7 @@ do
     rankLabel.Position = UDim2.new(0, 0, 0, 40)
     rankLabel.BackgroundTransparency = 1
     rankLabel.Text = "Rank: " .. CurrentRank .. "  |  Perms: " .. CurrentPerms
-    rankLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
+    rankLabel.TextColor3 = Color3.fromRGB(160, 160, 170)
     rankLabel.Font = Enum.Font.Gotham
     rankLabel.TextSize = 14
     rankLabel.Parent = frame
@@ -112,25 +117,25 @@ do
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.84, 0, 0, 42)
     box.Position = UDim2.new(0.08, 0, 0.40, 0)
-    box.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+    box.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = "Enter Password..."
     box.Font = Enum.Font.Gotham
     box.TextSize = 15
     box.ClearTextOnFocus = false
     box.Parent = frame
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 9)
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.84, 0, 0, 42)
     btn.Position = UDim2.new(0.08, 0, 0.68, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 170, 140)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 160, 130)
     btn.Text = "Unlock"
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 16
     btn.Parent = frame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
     local done = false
     local function tryUnlock()
@@ -145,9 +150,7 @@ do
     end
 
     btn.MouseButton1Click:Connect(tryUnlock)
-    box.FocusLost:Connect(function(enter)
-        if enter then tryUnlock() end
-    end)
+    box.FocusLost:Connect(function(enter) if enter then tryUnlock() end end)
 
     while not done do task.wait() end
 end
@@ -160,13 +163,13 @@ local success, Modal = pcall(function()
 end)
 
 if not success or not Modal then
-    warn("[ZuzifyRBX] Failed to load Modal UI")
+    warn("[ZuzifyRBX] Failed to load Modal")
     return
 end
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
-    SubTitle = "by Tai (vertexi8)  |  Perms: " .. CurrentPerms,
+    SubTitle = "OLED • by Tai",
     Size = UDim2.fromOffset(620, 520),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
@@ -207,6 +210,7 @@ local Features = {
     FrontCarry = false,
     SideCarry = false,
 
+    FlingType = "Normal", -- Normal, Strong, Up, Spin, Random
     FlingNearest = false,
     FlingTarget = false,
     FlingAll = false,
@@ -248,20 +252,10 @@ local ConfigFolder = "ZuzifyRBX"
 local ConfigFile = ConfigFolder .. "/config.json"
 
 local function SaveConfig()
-    local data = {
-        Features = Features,
-        Keybinds = {
-            ToggleESP = tostring(Keybinds.ToggleESP),
-            ToggleFly = tostring(Keybinds.ToggleFly),
-            ToggleNoclip = tostring(Keybinds.ToggleNoclip),
-            ToggleAimbot = tostring(Keybinds.ToggleAimbot),
-            ToggleInvisible = tostring(Keybinds.ToggleInvisible),
-        }
-    }
     pcall(function()
         if writefile then
             if not isfolder(ConfigFolder) then makefolder(ConfigFolder) end
-            writefile(ConfigFile, HttpService:JSONEncode(data))
+            writefile(ConfigFile, HttpService:JSONEncode({Features = Features}))
         end
     end)
 end
@@ -269,8 +263,7 @@ end
 local function LoadConfig()
     pcall(function()
         if readfile and isfile and isfile(ConfigFile) then
-            local raw = readfile(ConfigFile)
-            local data = HttpService:JSONDecode(raw)
+            local data = HttpService:JSONDecode(readfile(ConfigFile))
             if data.Features then
                 for k, v in pairs(data.Features) do
                     if Features[k] ~= nil then Features[k] = v end
@@ -282,7 +275,7 @@ end
 
 LoadConfig()
 
--- ================= ROLE DETECTION =================
+-- ================= ROLE =================
 local function GetRole(plr)
     if not plr or not plr.Character then return "Innocent" end
     local function check(tool)
@@ -553,17 +546,35 @@ local function GetClosestPlayer(maxDist)
     return closest
 end
 
-local function Fling(plr, strength)
+-- ================= BETTER FLING =================
+local function Fling(plr)
     pcall(function()
         if not plr or not plr.Character then return end
         local root = plr.Character:FindFirstChild("HumanoidRootPart")
         if not root then return end
-        strength = strength or 170
+
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        bv.Velocity = Vector3.new(math.random(-strength, strength), math.random(90, 150), math.random(-strength, strength))
         bv.Parent = root
-        task.delay(0.3, function() if bv then bv:Destroy() end end)
+
+        if Features.FlingType == "Normal" then
+            bv.Velocity = Vector3.new(math.random(-120, 120), math.random(80, 140), math.random(-120, 120))
+        elseif Features.FlingType == "Strong" then
+            bv.Velocity = Vector3.new(math.random(-220, 220), math.random(140, 220), math.random(-220, 220))
+        elseif Features.FlingType == "Up" then
+            bv.Velocity = Vector3.new(math.random(-40, 40), math.random(250, 400), math.random(-40, 40))
+        elseif Features.FlingType == "Spin" then
+            bv.Velocity = Vector3.new(math.random(-180, 180), 100, math.random(-180, 180))
+            local bg = Instance.new("BodyAngularVelocity")
+            bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bg.AngularVelocity = Vector3.new(0, 50, 0)
+            bg.Parent = root
+            task.delay(0.4, function() if bg then bg:Destroy() end end)
+        elseif Features.FlingType == "Random" then
+            bv.Velocity = Vector3.new(math.random(-300, 300), math.random(50, 300), math.random(-300, 300))
+        end
+
+        task.delay(0.35, function() if bv then bv:Destroy() end end)
     end)
 end
 
@@ -587,14 +598,14 @@ end
 
 -- ================= CHARACTER =================
 local function OnCharacter(char)
-    task.wait(0.55)
+    task.wait(0.5)
     ApplyStats()
     ApplyNoclip()
     if Features.FlyType ~= "None" then SetupFly() end
     if Features.HitboxExtender then ApplyHitbox() end
     if Features.Invisible then SetInvisible(true) end
     if Features.ServerInvisBypass then ApplyServerInvisBypass() end
-    if Features.ESP then task.delay(0.4, RefreshESP) end
+    if Features.ESP then task.delay(0.35, RefreshESP) end
 end
 
 if LocalPlayer.Character then OnCharacter(LocalPlayer.Character) end
@@ -602,7 +613,7 @@ LocalPlayer.CharacterAdded:Connect(OnCharacter)
 
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
-        task.wait(0.8)
+        task.wait(0.7)
         if Features.ESP then pcall(CreateESP, plr) end
         if not table.find(PlayerList, plr.Name) then
             table.insert(PlayerList, plr.Name)
@@ -622,21 +633,16 @@ for _, plr in ipairs(Players:GetPlayers()) do
 end
 
 -- ================= KEYBINDS =================
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
     if input.KeyCode == Keybinds.ToggleESP then
         Features.ESP = not Features.ESP
         if Features.ESP then RefreshESP() else ClearAllESP() end
-        Window:Notify({Title = "ESP", Description = Features.ESP and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        Window:Notify({Title = "ESP", Description = Features.ESP and "On" or "Off", Duration = 2, Type = "Info"})
         SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleFly then
-        if Features.FlyType == "None" then
-            Features.FlyType = "BodyVelocity"
-            SetupFly()
-        else
-            Features.FlyType = "None"
-            CleanupFly()
-        end
+        Features.FlyType = Features.FlyType == "None" and "BodyVelocity" or "None"
+        if Features.FlyType == "None" then CleanupFly() else SetupFly() end
         Window:Notify({Title = "Fly", Description = Features.FlyType, Duration = 2, Type = "Info"})
         SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleNoclip then
@@ -646,12 +652,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleAimbot then
         Features.Aimbot = not Features.Aimbot
-        Window:Notify({Title = "Aimbot", Description = Features.Aimbot and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        Window:Notify({Title = "Aimbot", Description = Features.Aimbot and "On" or "Off", Duration = 2, Type = "Info"})
         SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleInvisible then
         Features.Invisible = not Features.Invisible
         SetInvisible(Features.Invisible)
-        Window:Notify({Title = "Invisible", Description = Features.Invisible and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        Window:Notify({Title = "Invisible", Description = Features.Invisible and "On" or "Off", Duration = 2, Type = "Info"})
         SaveConfig()
     end
 end)
@@ -695,9 +701,7 @@ RunService.RenderStepped:Connect(function()
                     objs.Highlight.FillColor = color
                     objs.Highlight.OutlineColor = color
                 end
-                if objs.Box then
-                    objs.Box.Color3 = color
-                end
+                if objs.Box then objs.Box.Color3 = color end
             else
                 ClearESP(plr)
             end
@@ -770,7 +774,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if Features.AutoKill and tick() - lastKill > 1.25 then
+    if Features.AutoKill and tick() - lastKill > 1.2 then
         lastKill = tick()
         local tool = char and char:FindFirstChildOfClass("Tool")
         if tool then pcall(function() tool:Activate() end) end
@@ -788,19 +792,19 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if Features.FlingNearest and tick() - lastFling > 0.65 then
+    if Features.FlingNearest and tick() - lastFling > 0.6 then
         lastFling = tick()
         local closest = GetClosestPlayer(55)
         if closest then Fling(closest) end
     end
 
-    if Features.FlingTarget and Features.SelectedTarget and tick() - lastFling > 0.45 then
+    if Features.FlingTarget and Features.SelectedTarget and tick() - lastFling > 0.4 then
         lastFling = tick()
         local target = Players:FindFirstChild(Features.SelectedTarget)
         if target then Fling(target) end
     end
 
-    if Features.FlingAll and tick() - lastFling > 0.95 then
+    if Features.FlingAll and tick() - lastFling > 0.9 then
         lastFling = tick()
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer then Fling(plr) end
@@ -810,7 +814,7 @@ RunService.RenderStepped:Connect(function()
     if Features.GlitchSelf and char and tick() - lastGlitch > 0.07 then
         lastGlitch = tick()
         SetInvisible(true)
-        task.delay(0.045, function()
+        task.delay(0.04, function()
             if Features.GlitchSelf then SetInvisible(Features.Invisible) end
         end)
     end
@@ -865,21 +869,50 @@ end)
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
-    Title = "ZuzifyRBX Full Build",
+    Title = "ZuzifyRBX OLED Build",
     Description = "Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
     Callback = function() end
 })
 
-Home:New("Title")({ Title = "Zuzify News" })
+Home:New("Title")({ Title = "Beta Request" })
+Home:New("Button")({
+    Title = "Unlock Beta",
+    Description = "Sends your username to the owner for review",
+    Callback = function()
+        if DISCORD_WEBHOOK == "YOUR_DISCORD_WEBHOOK_HERE" then
+            Window:Notify({Title = "Webhook", Description = "Webhook not set", Duration = 3, Type = "Error"})
+            return
+        end
+        pcall(function()
+            local data = {
+                content = "**Beta Request**\nUsername: `" .. LocalPlayer.Name .. "`\nUserId: `" .. LocalPlayer.UserId .. "`\nRank: `" .. CurrentRank .. "`"
+            }
+            local req = http_request or request or (syn and syn.request)
+            if req then
+                req({
+                    Url = DISCORD_WEBHOOK,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode(data)
+                })
+                Window:Notify({Title = "Beta", Description = "Request sent", Duration = 4, Type = "Success"})
+            else
+                Window:Notify({Title = "Error", Description = "Executor does not support requests", Duration = 3, Type = "Error"})
+            end
+        end)
+    end
+})
+
+Home:New("Title")({ Title = "News" })
 local newsText = "Loading..."
 pcall(function() newsText = game:HttpGet("https://pastebin.com/raw/F3p7v62u") end)
 Home:New("Button")({
-    Title = "Latest News",
+    Title = "Zuzify News",
     Description = newsText,
     Callback = function()
         local new = "Failed"
         pcall(function() new = game:HttpGet("https://pastebin.com/raw/F3p7v62u") end)
-        Window:Notify({Title = "Zuzify News", Description = new, Duration = 6, Type = "Info"})
+        Window:Notify({Title = "News", Description = new, Duration = 6, Type = "Info"})
     end
 })
 
@@ -929,13 +962,19 @@ end })
 Combat:New("Toggle")({ Title = "Kill Selected", DefaultValue = Features.KillTarget, Callback = function(v) Features.KillTarget = v SaveConfig() end })
 
 local Carry = Window:AddTab("Carry")
-Carry:New("Title")({ Title = "Carry Styles" })
+Carry:New("Title")({ Title = "Carry" })
 Carry:New("Toggle")({ Title = "Piggyback", DefaultValue = Features.Piggyback, Callback = function(v) Features.Piggyback = v SaveConfig() end })
 Carry:New("Toggle")({ Title = "Front Carry", DefaultValue = Features.FrontCarry, Callback = function(v) Features.FrontCarry = v SaveConfig() end })
 Carry:New("Toggle")({ Title = "Side Carry", DefaultValue = Features.SideCarry, Callback = function(v) Features.SideCarry = v SaveConfig() end })
 
 local Troll = Window:AddTab("Troll")
 Troll:New("Title")({ Title = "Fling" })
+Troll:New("Dropdown")({
+    Title = "Fling Type",
+    Options = {"Normal", "Strong", "Up", "Spin", "Random"},
+    Default = Features.FlingType,
+    Callback = function(v) Features.FlingType = v SaveConfig() end
+})
 Troll:New("Toggle")({ Title = "Fling Nearest", DefaultValue = Features.FlingNearest, Callback = function(v) Features.FlingNearest = v SaveConfig() end })
 Troll:New("Toggle")({ Title = "Fling Selected", DefaultValue = Features.FlingTarget, Callback = function(v) Features.FlingTarget = v SaveConfig() end })
 Troll:New("Toggle")({ Title = "Fling All", DefaultValue = Features.FlingAll, Callback = function(v) Features.FlingAll = v SaveConfig() end })
@@ -954,7 +993,7 @@ Utility:New("Toggle")({ Title = "TP to Murderer", DefaultValue = Features.TPMurd
 Utility:New("Toggle")({ Title = "TP to Sheriff", DefaultValue = Features.TPSheriff, Callback = function(v) Features.TPSheriff = v SaveConfig() end })
 
 local Teleports = Window:AddTab("Teleports")
-Teleports:New("Title")({ Title = "Quick TPs" })
+Teleports:New("Title")({ Title = "Teleports" })
 Teleports:New("Button")({ Title = "Lobby", Callback = function() Teleport(Vector3.new(0, 10, 0)) end })
 Teleports:New("Button")({ Title = "Arena", Callback = function() Teleport(Vector3.new(0, 5, 50)) end })
 Teleports:New("Button")({ Title = "Bank", Callback = function() Teleport(Vector3.new(0, 5, 0)) end })
@@ -993,9 +1032,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "Loaded | Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
+    Description = "OLED Build loaded | Rank: " .. CurrentRank,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX Full Script loaded | Rank:", CurrentRank, "| Perms:", CurrentPerms)
+print("ZuzifyRBX OLED Build | Rank:", CurrentRank, "| Perms:", CurrentPerms)
