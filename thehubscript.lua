@@ -1,9 +1,9 @@
 --[[
-    ZuzifyRBX - Full Stable + Keybinds + Themes + Config
+    ZuzifyRBX - Full Script
+    Ranks loaded from Pastebin
+    Everyone needs password (including Owner)
     UI: Modal
-    Ranks: Owner / Developer / Beta / User
     Password: password
-    Owner: mrcoptai / 717544874
 ]]
 
 local Players = game:GetService("Players")
@@ -18,43 +18,68 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ================= RANK SYSTEM =================
-local CORRECT_PASSWORD = "password"
-local BETA_GAMEPASS_ID = 1944876349
+-- ================= PASTEBIN RANK SYSTEM =================
+local RANK_PASTEBIN = "https://pastebin.com/raw/YOUR_PASTEBIN_ID_HERE" -- << PUT YOUR RAW LINK HERE
 
-local Owners = {
-    [717544874] = true,
-    ["mrcoptai"] = true
-}
+local RankData = {}
+local CurrentRank = "User"
+local CurrentPerms = 1
 
-local Developers = {}
-
-local function GetRank()
-    local name = LocalPlayer.Name:lower()
-    local uid = LocalPlayer.UserId
-    if Owners[uid] or Owners[name] then return "Owner" end
-    if Developers[uid] or Developers[name] then return "Developer" end
-    local hasBeta = false
-    pcall(function()
-        hasBeta = MarketplaceService:UserOwnsGamePassAsync(uid, BETA_GAMEPASS_ID)
+local function LoadRanks()
+    local success, result = pcall(function()
+        return game:HttpGet(RANK_PASTEBIN)
     end)
-    if hasBeta then return "Beta" end
-    return "User"
+
+    if not success or not result then
+        warn("[ZuzifyRBX] Failed to load ranks from Pastebin")
+        return
+    end
+
+    for line in result:gmatch("[^\r\n]+") do
+        -- Skip comments and empty lines
+        if not line:match("^%s*%-%-") and line:match("%S") then
+            local rank, uid, username, perms = line:match("([^|]+)|([^|]+)|([^|]+)|([^|]+)")
+            if rank and uid and username and perms then
+                table.insert(RankData, {
+                    Rank = rank:match("^%s*(.-)%s*$"),
+                    UserId = tonumber(uid) or 0,
+                    Username = username:lower():match("^%s*(.-)%s*$"),
+                    Perms = tonumber(perms) or 1
+                })
+            end
+        end
+    end
 end
 
-local Rank = GetRank()
-local isOwner = Rank == "Owner"
-local passwordPassed = isOwner
+LoadRanks()
 
-if not isOwner then
+local function GetPlayerRank()
+    local name = LocalPlayer.Name:lower()
+    local uid = LocalPlayer.UserId
+
+    for _, data in ipairs(RankData) do
+        if (data.UserId ~= 0 and data.UserId == uid) or data.Username == name then
+            return data.Rank, data.Perms
+        end
+    end
+    return "User", 1
+end
+
+CurrentRank, CurrentPerms = GetPlayerRank()
+
+-- ================= EVERYONE NEEDS PASSWORD =================
+local CORRECT_PASSWORD = "password"
+local passwordPassed = false
+
+do
     local gui = Instance.new("ScreenGui")
     gui.Name = "ZuzifyRBX_Pass"
     gui.ResetOnSpawn = false
     gui.Parent = CoreGui
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 400, 0, 220)
-    frame.Position = UDim2.new(0.5, -200, 0.5, -110)
+    frame.Size = UDim2.new(0, 420, 0, 240)
+    frame.Position = UDim2.new(0.5, -210, 0.5, -120)
     frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     frame.BorderSizePixel = 0
     frame.Parent = gui
@@ -66,7 +91,7 @@ if not isOwner then
     stroke.Parent = frame
 
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 45)
+    title.Size = UDim2.new(1, 0, 0, 42)
     title.BackgroundTransparency = 1
     title.Text = "ZuzifyRBX"
     title.TextColor3 = Color3.fromRGB(140, 255, 230)
@@ -76,17 +101,17 @@ if not isOwner then
 
     local rankLabel = Instance.new("TextLabel")
     rankLabel.Size = UDim2.new(1, 0, 0, 22)
-    rankLabel.Position = UDim2.new(0, 0, 0, 42)
+    rankLabel.Position = UDim2.new(0, 0, 0, 40)
     rankLabel.BackgroundTransparency = 1
-    rankLabel.Text = "Rank: " .. Rank
+    rankLabel.Text = "Rank: " .. CurrentRank .. "  |  Perms: " .. CurrentPerms
     rankLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
     rankLabel.Font = Enum.Font.Gotham
     rankLabel.TextSize = 14
     rankLabel.Parent = frame
 
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0.84, 0, 0, 40)
-    box.Position = UDim2.new(0.08, 0, 0.42, 0)
+    box.Size = UDim2.new(0.84, 0, 0, 42)
+    box.Position = UDim2.new(0.08, 0, 0.40, 0)
     box.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = "Enter Password..."
@@ -97,7 +122,7 @@ if not isOwner then
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 9)
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.84, 0, 0, 40)
+    btn.Size = UDim2.new(0.84, 0, 0, 42)
     btn.Position = UDim2.new(0.08, 0, 0.68, 0)
     btn.BackgroundColor3 = Color3.fromRGB(0, 170, 140)
     btn.Text = "Unlock"
@@ -120,7 +145,9 @@ if not isOwner then
     end
 
     btn.MouseButton1Click:Connect(tryUnlock)
-    box.FocusLost:Connect(function(enter) if enter then tryUnlock() end end)
+    box.FocusLost:Connect(function(enter)
+        if enter then tryUnlock() end
+    end)
 
     while not done do task.wait() end
 end
@@ -133,13 +160,13 @@ local success, Modal = pcall(function()
 end)
 
 if not success or not Modal then
-    warn("[ZuzifyRBX] Failed to load Modal")
+    warn("[ZuzifyRBX] Failed to load Modal UI")
     return
 end
 
 local Window = Modal:CreateWindow({
-    Title = "ZuzifyRBX [" .. Rank:upper() .. "]",
-    SubTitle = "by Tai (vertexi8) • Keybinds + Themes + Config",
+    Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
+    SubTitle = "by Tai (vertexi8)  |  Perms: " .. CurrentPerms,
     Size = UDim2.fromOffset(620, 520),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
@@ -195,7 +222,6 @@ local Features = {
     AntiDie = false,
 }
 
--- Keybinds
 local Keybinds = {
     ToggleESP = Enum.KeyCode.E,
     ToggleFly = Enum.KeyCode.F,
@@ -217,7 +243,7 @@ local currentMurderer, currentSheriff = nil, nil
 local PlayerList = {}
 local originalTransparency = {}
 
--- ================= CONFIG SYSTEM =================
+-- ================= CONFIG =================
 local ConfigFolder = "ZuzifyRBX"
 local ConfigFile = ConfigFolder .. "/config.json"
 
@@ -247,21 +273,7 @@ local function LoadConfig()
             local data = HttpService:JSONDecode(raw)
             if data.Features then
                 for k, v in pairs(data.Features) do
-                    if Features[k] ~= nil then
-                        Features[k] = v
-                    end
-                end
-            end
-            if data.Keybinds then
-                for k, v in pairs(data.Keybinds) do
-                    if Keybinds[k] then
-                        local success, key = pcall(function()
-                            return Enum.KeyCode[v:gsub("Enum.KeyCode.", "")]
-                        end)
-                        if success and key then
-                            Keybinds[k] = key
-                        end
-                    end
+                    if Features[k] ~= nil then Features[k] = v end
                 end
             end
         end
@@ -270,7 +282,7 @@ end
 
 LoadConfig()
 
--- ================= ROLE =================
+-- ================= ROLE DETECTION =================
 local function GetRole(plr)
     if not plr or not plr.Character then return "Innocent" end
     local function check(tool)
@@ -303,9 +315,7 @@ end
 local function ClearESP(plr)
     if ESPObjects[plr] then
         for _, obj in pairs(ESPObjects[plr]) do
-            pcall(function()
-                if obj and obj.Parent then obj:Destroy() end
-            end)
+            pcall(function() if obj and obj.Parent then obj:Destroy() end end)
         end
         ESPObjects[plr] = nil
     end
@@ -611,13 +621,14 @@ for _, plr in ipairs(Players:GetPlayers()) do
     if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
 end
 
--- ================= KEYBIND HANDLER =================
+-- ================= KEYBINDS =================
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Keybinds.ToggleESP then
         Features.ESP = not Features.ESP
         if Features.ESP then RefreshESP() else ClearAllESP() end
         Window:Notify({Title = "ESP", Description = Features.ESP and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleFly then
         if Features.FlyType == "None" then
             Features.FlyType = "BodyVelocity"
@@ -627,21 +638,21 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             CleanupFly()
         end
         Window:Notify({Title = "Fly", Description = Features.FlyType, Duration = 2, Type = "Info"})
+        SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleNoclip then
-        if Features.NoclipType == "None" then
-            Features.NoclipType = "Normal"
-        else
-            Features.NoclipType = "None"
-        end
+        Features.NoclipType = Features.NoclipType == "None" and "Normal" or "None"
         ApplyNoclip()
         Window:Notify({Title = "Noclip", Description = Features.NoclipType, Duration = 2, Type = "Info"})
+        SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleAimbot then
         Features.Aimbot = not Features.Aimbot
         Window:Notify({Title = "Aimbot", Description = Features.Aimbot and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        SaveConfig()
     elseif input.KeyCode == Keybinds.ToggleInvisible then
         Features.Invisible = not Features.Invisible
         SetInvisible(Features.Invisible)
         Window:Notify({Title = "Invisible", Description = Features.Invisible and "Enabled" or "Disabled", Duration = 2, Type = "Info"})
+        SaveConfig()
     end
 end)
 
@@ -851,12 +862,11 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================= UI =================
-
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
     Title = "ZuzifyRBX Full Build",
-    Description = "Rank: " .. Rank .. " | Keybinds + Themes + Config",
+    Description = "Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
     Callback = function() end
 })
 
@@ -875,261 +885,73 @@ Home:New("Button")({
 
 local Visuals = Window:AddTab("Visuals")
 Visuals:New("Title")({ Title = "ESP" })
-Visuals:New("Toggle")({
-    Title = "Enable ESP",
-    DefaultValue = Features.ESP,
-    Callback = function(v)
-        Features.ESP = v
-        if v then RefreshESP() else ClearAllESP() end
-        SaveConfig()
-    end
-})
-Visuals:New("Toggle")({
-    Title = "Names + Role",
-    DefaultValue = Features.ESP_Names,
-    Callback = function(v) Features.ESP_Names = v RefreshESP() SaveConfig() end
-})
-Visuals:New("Toggle")({
-    Title = "Distance",
-    DefaultValue = Features.ESP_Distance,
-    Callback = function(v) Features.ESP_Distance = v SaveConfig() end
-})
-Visuals:New("Toggle")({
-    Title = "Chams",
-    DefaultValue = Features.ESP_Chams,
-    Callback = function(v) Features.ESP_Chams = v RefreshESP() SaveConfig() end
-})
-Visuals:New("Toggle")({
-    Title = "Boxes",
-    DefaultValue = Features.ESP_Boxes,
-    Callback = function(v) Features.ESP_Boxes = v RefreshESP() SaveConfig() end
-})
+Visuals:New("Toggle")({ Title = "Enable ESP", DefaultValue = Features.ESP, Callback = function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end SaveConfig() end })
+Visuals:New("Toggle")({ Title = "Names + Role", DefaultValue = Features.ESP_Names, Callback = function(v) Features.ESP_Names = v RefreshESP() SaveConfig() end })
+Visuals:New("Toggle")({ Title = "Distance", DefaultValue = Features.ESP_Distance, Callback = function(v) Features.ESP_Distance = v SaveConfig() end })
+Visuals:New("Toggle")({ Title = "Chams", DefaultValue = Features.ESP_Chams, Callback = function(v) Features.ESP_Chams = v RefreshESP() SaveConfig() end })
+Visuals:New("Toggle")({ Title = "Boxes", DefaultValue = Features.ESP_Boxes, Callback = function(v) Features.ESP_Boxes = v RefreshESP() SaveConfig() end })
 Visuals:New("Button")({ Title = "Refresh ESP", Callback = RefreshESP })
-Visuals:New("Button")({
-    Title = "Clear ESP",
-    Callback = function() ClearAllESP() Features.ESP = false SaveConfig() end
-})
+Visuals:New("Button")({ Title = "Clear ESP", Callback = function() ClearAllESP() Features.ESP = false SaveConfig() end })
 
 local Movement = Window:AddTab("Movement")
 Movement:New("Title")({ Title = "Movement" })
-Movement:New("Dropdown")({
-    Title = "Noclip Type",
-    Options = {"None", "Normal", "Smooth", "Full", "MM2"},
-    Default = Features.NoclipType,
-    Callback = function(v) Features.NoclipType = v ApplyNoclip() SaveConfig() end
-})
-Movement:New("Dropdown")({
-    Title = "Fly Type",
-    Options = {"None", "BodyVelocity", "Smooth"},
-    Default = Features.FlyType,
-    Callback = function(v)
-        Features.FlyType = v
-        if v == "None" then CleanupFly() else SetupFly() end
-        SaveConfig()
-    end
-})
-Movement:New("Slider")({
-    Title = "Fly Speed",
-    Default = Features.FlySpeed,
-    Minimum = 10,
-    Maximum = 300,
-    Callback = function(v) Features.FlySpeed = v SaveConfig() end
-})
-Movement:New("Toggle")({
-    Title = "Infinite Jump",
-    DefaultValue = Features.InfiniteJump,
-    Callback = function(v) Features.InfiniteJump = v SaveConfig() end
-})
-Movement:New("Slider")({
-    Title = "Walk Speed",
-    Default = Features.WalkSpeed,
-    Minimum = 10,
-    Maximum = 300,
-    Callback = function(v) Features.WalkSpeed = v ApplyStats() SaveConfig() end
-})
-Movement:New("Slider")({
-    Title = "Jump Power",
-    Default = Features.JumpPower,
-    Minimum = 30,
-    Maximum = 300,
-    Callback = function(v) Features.JumpPower = v ApplyStats() SaveConfig() end
-})
-Movement:New("Toggle")({
-    Title = "Anti Fling",
-    DefaultValue = Features.AntiFling,
-    Callback = function(v) Features.AntiFling = v SaveConfig() end
-})
-Movement:New("Toggle")({
-    Title = "Anti Die",
-    DefaultValue = Features.AntiDie,
-    Callback = function(v) Features.AntiDie = v SaveConfig() end
-})
-Movement:New("Toggle")({
-    Title = "Hitbox Extender",
-    DefaultValue = Features.HitboxExtender,
-    Callback = function(v) Features.HitboxExtender = v ApplyHitbox() SaveConfig() end
-})
-Movement:New("Slider")({
-    Title = "Hitbox Size",
-    Default = Features.HitboxSize,
-    Minimum = 3,
-    Maximum = 30,
-    Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end SaveConfig() end
-})
-Movement:New("Toggle")({
-    Title = "Anti AFK",
-    DefaultValue = Features.AntiAFK,
-    Callback = function(v) Features.AntiAFK = v SaveConfig() end
-})
+Movement:New("Dropdown")({ Title = "Noclip Type", Options = {"None", "Normal", "Smooth", "Full", "MM2"}, Default = Features.NoclipType, Callback = function(v) Features.NoclipType = v ApplyNoclip() SaveConfig() end })
+Movement:New("Dropdown")({ Title = "Fly Type", Options = {"None", "BodyVelocity", "Smooth"}, Default = Features.FlyType, Callback = function(v) Features.FlyType = v if v == "None" then CleanupFly() else SetupFly() end SaveConfig() end })
+Movement:New("Slider")({ Title = "Fly Speed", Default = Features.FlySpeed, Minimum = 10, Maximum = 300, Callback = function(v) Features.FlySpeed = v SaveConfig() end })
+Movement:New("Toggle")({ Title = "Infinite Jump", DefaultValue = Features.InfiniteJump, Callback = function(v) Features.InfiniteJump = v SaveConfig() end })
+Movement:New("Slider")({ Title = "Walk Speed", Default = Features.WalkSpeed, Minimum = 10, Maximum = 300, Callback = function(v) Features.WalkSpeed = v ApplyStats() SaveConfig() end })
+Movement:New("Slider")({ Title = "Jump Power", Default = Features.JumpPower, Minimum = 30, Maximum = 300, Callback = function(v) Features.JumpPower = v ApplyStats() SaveConfig() end })
+Movement:New("Toggle")({ Title = "Anti Fling", DefaultValue = Features.AntiFling, Callback = function(v) Features.AntiFling = v SaveConfig() end })
+Movement:New("Toggle")({ Title = "Anti Die", DefaultValue = Features.AntiDie, Callback = function(v) Features.AntiDie = v SaveConfig() end })
+Movement:New("Toggle")({ Title = "Hitbox Extender", DefaultValue = Features.HitboxExtender, Callback = function(v) Features.HitboxExtender = v ApplyHitbox() SaveConfig() end })
+Movement:New("Slider")({ Title = "Hitbox Size", Default = Features.HitboxSize, Minimum = 3, Maximum = 30, Callback = function(v) Features.HitboxSize = v if Features.HitboxExtender then ApplyHitbox() end SaveConfig() end })
+Movement:New("Toggle")({ Title = "Anti AFK", DefaultValue = Features.AntiAFK, Callback = function(v) Features.AntiAFK = v SaveConfig() end })
 
 local Combat = Window:AddTab("Combat")
 Combat:New("Title")({ Title = "Aimbot & Aura" })
-Combat:New("Toggle")({
-    Title = "Aimbot",
-    DefaultValue = Features.Aimbot,
-    Callback = function(v) Features.Aimbot = v SaveConfig() end
-})
-Combat:New("Toggle")({
-    Title = "Silent Aim",
-    DefaultValue = Features.SilentAim,
-    Callback = function(v) Features.SilentAim = v SaveConfig() end
-})
-Combat:New("Slider")({
-    Title = "FOV",
-    Default = Features.AimbotFOV,
-    Minimum = 50,
-    Maximum = 500,
-    Callback = function(v) Features.AimbotFOV = v SaveConfig() end
-})
-Combat:New("Slider")({
-    Title = "Smoothness",
-    Default = Features.AimbotSmooth * 100,
-    Minimum = 5,
-    Maximum = 50,
-    Callback = function(v) Features.AimbotSmooth = v / 100 SaveConfig() end
-})
-Combat:New("Dropdown")({
-    Title = "Aim Part",
-    Options = {"HumanoidRootPart", "Head", "UpperTorso"},
-    Default = Features.AimPart,
-    Callback = function(v) Features.AimPart = v SaveConfig() end
-})
-Combat:New("Toggle")({
-    Title = "Auto Kill",
-    DefaultValue = Features.AutoKill,
-    Callback = function(v) Features.AutoKill = v SaveConfig() end
-})
-Combat:New("Toggle")({
-    Title = "Knife Aura",
-    DefaultValue = Features.KnifeAura,
-    Callback = function(v) Features.KnifeAura = v SaveConfig() end
-})
-Combat:New("Slider")({
-    Title = "Aura Range",
-    Default = Features.AuraRange,
-    Minimum = 6,
-    Maximum = 40,
-    Callback = function(v) Features.AuraRange = v SaveConfig() end
-})
+Combat:New("Toggle")({ Title = "Aimbot", DefaultValue = Features.Aimbot, Callback = function(v) Features.Aimbot = v SaveConfig() end })
+Combat:New("Toggle")({ Title = "Silent Aim", DefaultValue = Features.SilentAim, Callback = function(v) Features.SilentAim = v SaveConfig() end })
+Combat:New("Slider")({ Title = "FOV", Default = Features.AimbotFOV, Minimum = 50, Maximum = 500, Callback = function(v) Features.AimbotFOV = v SaveConfig() end })
+Combat:New("Slider")({ Title = "Smoothness", Default = Features.AimbotSmooth * 100, Minimum = 5, Maximum = 50, Callback = function(v) Features.AimbotSmooth = v / 100 SaveConfig() end })
+Combat:New("Dropdown")({ Title = "Aim Part", Options = {"HumanoidRootPart", "Head", "UpperTorso"}, Default = Features.AimPart, Callback = function(v) Features.AimPart = v SaveConfig() end })
+Combat:New("Toggle")({ Title = "Auto Kill", DefaultValue = Features.AutoKill, Callback = function(v) Features.AutoKill = v SaveConfig() end })
+Combat:New("Toggle")({ Title = "Knife Aura", DefaultValue = Features.KnifeAura, Callback = function(v) Features.KnifeAura = v SaveConfig() end })
+Combat:New("Slider")({ Title = "Aura Range", Default = Features.AuraRange, Minimum = 6, Maximum = 40, Callback = function(v) Features.AuraRange = v SaveConfig() end })
 Combat:New("Title")({ Title = "Target" })
-Combat:New("Dropdown")({
-    Title = "Select Player",
-    Options = PlayerList,
-    Default = PlayerList[1] or "None",
-    Callback = function(v) Features.SelectedTarget = v SaveConfig() end
-})
-Combat:New("Button")({
-    Title = "Refresh Players",
-    Callback = function()
-        PlayerList = {}
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
-        end
-        Window:Notify({Title = "Players", Description = "Refreshed", Duration = 3, Type = "Success"})
+Combat:New("Dropdown")({ Title = "Select Player", Options = PlayerList, Default = PlayerList[1] or "None", Callback = function(v) Features.SelectedTarget = v SaveConfig() end })
+Combat:New("Button")({ Title = "Refresh Players", Callback = function()
+    PlayerList = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
     end
-})
-Combat:New("Toggle")({
-    Title = "Kill Selected",
-    DefaultValue = Features.KillTarget,
-    Callback = function(v) Features.KillTarget = v SaveConfig() end
-})
+    Window:Notify({Title = "Players", Description = "Refreshed", Duration = 3, Type = "Success"})
+end })
+Combat:New("Toggle")({ Title = "Kill Selected", DefaultValue = Features.KillTarget, Callback = function(v) Features.KillTarget = v SaveConfig() end })
 
 local Carry = Window:AddTab("Carry")
 Carry:New("Title")({ Title = "Carry Styles" })
-Carry:New("Toggle")({
-    Title = "Piggyback",
-    DefaultValue = Features.Piggyback,
-    Callback = function(v) Features.Piggyback = v SaveConfig() end
-})
-Carry:New("Toggle")({
-    Title = "Front Carry",
-    DefaultValue = Features.FrontCarry,
-    Callback = function(v) Features.FrontCarry = v SaveConfig() end
-})
-Carry:New("Toggle")({
-    Title = "Side Carry",
-    DefaultValue = Features.SideCarry,
-    Callback = function(v) Features.SideCarry = v SaveConfig() end
-})
+Carry:New("Toggle")({ Title = "Piggyback", DefaultValue = Features.Piggyback, Callback = function(v) Features.Piggyback = v SaveConfig() end })
+Carry:New("Toggle")({ Title = "Front Carry", DefaultValue = Features.FrontCarry, Callback = function(v) Features.FrontCarry = v SaveConfig() end })
+Carry:New("Toggle")({ Title = "Side Carry", DefaultValue = Features.SideCarry, Callback = function(v) Features.SideCarry = v SaveConfig() end })
 
 local Troll = Window:AddTab("Troll")
 Troll:New("Title")({ Title = "Fling" })
-Troll:New("Toggle")({
-    Title = "Fling Nearest",
-    DefaultValue = Features.FlingNearest,
-    Callback = function(v) Features.FlingNearest = v SaveConfig() end
-})
-Troll:New("Toggle")({
-    Title = "Fling Selected",
-    DefaultValue = Features.FlingTarget,
-    Callback = function(v) Features.FlingTarget = v SaveConfig() end
-})
-Troll:New("Toggle")({
-    Title = "Fling All",
-    DefaultValue = Features.FlingAll,
-    Callback = function(v) Features.FlingAll = v SaveConfig() end
-})
+Troll:New("Toggle")({ Title = "Fling Nearest", DefaultValue = Features.FlingNearest, Callback = function(v) Features.FlingNearest = v SaveConfig() end })
+Troll:New("Toggle")({ Title = "Fling Selected", DefaultValue = Features.FlingTarget, Callback = function(v) Features.FlingTarget = v SaveConfig() end })
+Troll:New("Toggle")({ Title = "Fling All", DefaultValue = Features.FlingAll, Callback = function(v) Features.FlingAll = v SaveConfig() end })
 
 local Self = Window:AddTab("Self")
 Self:New("Title")({ Title = "Self" })
-Self:New("Toggle")({
-    Title = "Invisible",
-    DefaultValue = Features.Invisible,
-    Callback = function(v) Features.Invisible = v SetInvisible(v) SaveConfig() end
-})
-Self:New("Toggle")({
-    Title = "Server Invis Bypass",
-    DefaultValue = Features.ServerInvisBypass,
-    Callback = function(v) Features.ServerInvisBypass = v if v then ApplyServerInvisBypass() end SaveConfig() end
-})
-Self:New("Toggle")({
-    Title = "Glitch Self",
-    DefaultValue = Features.GlitchSelf,
-    Callback = function(v) Features.GlitchSelf = v SaveConfig() end
-})
+Self:New("Toggle")({ Title = "Invisible", DefaultValue = Features.Invisible, Callback = function(v) Features.Invisible = v SetInvisible(v) SaveConfig() end })
+Self:New("Toggle")({ Title = "Server Invis Bypass", DefaultValue = Features.ServerInvisBypass, Callback = function(v) Features.ServerInvisBypass = v if v then ApplyServerInvisBypass() end SaveConfig() end })
+Self:New("Toggle")({ Title = "Glitch Self", DefaultValue = Features.GlitchSelf, Callback = function(v) Features.GlitchSelf = v SaveConfig() end })
 
 local Utility = Window:AddTab("Utility")
 Utility:New("Title")({ Title = "Utility" })
-Utility:New("Toggle")({
-    Title = "Coin Farm",
-    DefaultValue = Features.CoinFarm,
-    Callback = function(v) Features.CoinFarm = v SaveConfig() end
-})
-Utility:New("Toggle")({
-    Title = "Grab Gun",
-    DefaultValue = Features.GrabGun,
-    Callback = function(v) Features.GrabGun = v SaveConfig() end
-})
-Utility:New("Toggle")({
-    Title = "TP to Murderer",
-    DefaultValue = Features.TPMurderer,
-    Callback = function(v) Features.TPMurderer = v SaveConfig() end
-})
-Utility:New("Toggle")({
-    Title = "TP to Sheriff",
-    DefaultValue = Features.TPSheriff,
-    Callback = function(v) Features.TPSheriff = v SaveConfig() end
-})
+Utility:New("Toggle")({ Title = "Coin Farm", DefaultValue = Features.CoinFarm, Callback = function(v) Features.CoinFarm = v SaveConfig() end })
+Utility:New("Toggle")({ Title = "Grab Gun", DefaultValue = Features.GrabGun, Callback = function(v) Features.GrabGun = v SaveConfig() end })
+Utility:New("Toggle")({ Title = "TP to Murderer", DefaultValue = Features.TPMurderer, Callback = function(v) Features.TPMurderer = v SaveConfig() end })
+Utility:New("Toggle")({ Title = "TP to Sheriff", DefaultValue = Features.TPSheriff, Callback = function(v) Features.TPSheriff = v SaveConfig() end })
 
 local Teleports = Window:AddTab("Teleports")
 Teleports:New("Title")({ Title = "Quick TPs" })
@@ -1139,53 +961,18 @@ Teleports:New("Button")({ Title = "Bank", Callback = function() Teleport(Vector3
 Teleports:New("Button")({ Title = "Hotel", Callback = function() Teleport(Vector3.new(50, 5, 0)) end })
 Teleports:New("Button")({ Title = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end })
 
--- SETTINGS (Themes + Keybinds + Config)
 local Settings = Window:AddTab("Settings")
-
-Settings:New("Title")({ Title = "Themes" })
-Settings:New("Dropdown")({
-    Title = "Theme",
-    Options = {"Dark", "AMOLED", "Midnight", "Ocean", "Crimson", "Forest", "Purple", "Gold"},
-    Default = "Dark",
-    Callback = function(theme)
-        -- Modal theme switching (basic support)
-        pcall(function()
-            if Window.SetTheme then
-                Window:SetTheme(theme)
-            end
-        end)
-        Window:Notify({Title = "Theme", Description = "Changed to " .. theme, Duration = 3, Type = "Success"})
-    end
-})
-
 Settings:New("Title")({ Title = "Keybinds" })
 Settings:New("Button")({
     Title = "Current Keybinds",
     Description = "ESP: E | Fly: F | Noclip: N | Aimbot: V | Invisible: I",
     Callback = function() end
 })
-
 Settings:New("Title")({ Title = "Config" })
-Settings:New("Button")({
-    Title = "Save Config",
-    Callback = function()
-        SaveConfig()
-        Window:Notify({Title = "Config", Description = "Saved successfully", Duration = 3, Type = "Success"})
-    end
-})
-Settings:New("Button")({
-    Title = "Load Config",
-    Callback = function()
-        LoadConfig()
-        Window:Notify({Title = "Config", Description = "Loaded", Duration = 3, Type = "Success"})
-    end
-})
-
+Settings:New("Button")({ Title = "Save Config", Callback = function() SaveConfig() Window:Notify({Title = "Config", Description = "Saved", Duration = 3, Type = "Success"}) end })
+Settings:New("Button")({ Title = "Load Config", Callback = function() LoadConfig() Window:Notify({Title = "Config", Description = "Loaded", Duration = 3, Type = "Success"}) end })
 Settings:New("Title")({ Title = "Server" })
-Settings:New("Button")({
-    Title = "Rejoin",
-    Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end
-})
+Settings:New("Button")({ Title = "Rejoin", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
 Settings:New("Button")({
     Title = "Server Hop",
     Callback = function()
@@ -1206,9 +993,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "Full Build loaded | Rank: " .. Rank,
+    Description = "Loaded | Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX Full Build | Rank:", Rank)
+print("ZuzifyRBX Full Script loaded | Rank:", CurrentRank, "| Perms:", CurrentPerms)
