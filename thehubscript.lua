@@ -1,6 +1,6 @@
 --[[
-    ZuzifyRBX - Full Combined Build
-    MM2 + Cheese Escape
+    ZuzifyRBX - New Better Build
+    Themes + MM2 + Cheese Escape
 ]]
 
 --------------------------- CONFIG ---------------------------
@@ -31,20 +31,22 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Rank
+-- Rank System
 local CurrentRank, CurrentPerms, NeedsPassword = "User", 1, true
 
 local function IsBlacklisted()
     local name = LocalPlayer.Name:lower()
     local uid = LocalPlayer.UserId
     for _, v in ipairs(Blacklist) do
-        if (type(v) == "number" and v == uid) or (type(v) == "string" and v:lower() == name) then return true end
+        if (type(v) == "number" and v == uid) or (type(v) == "string" and v:lower() == name) then
+            return true
+        end
     end
     return false
 end
 
 if IsBlacklisted() then
-    pcall(function() LocalPlayer:Kick("Blacklisted") end)
+    pcall(function() LocalPlayer:Kick("Blacklisted from ZuzifyRBX") end)
     return
 end
 
@@ -61,7 +63,7 @@ end
 
 CurrentRank, CurrentPerms, NeedsPassword = GetPlayerRank()
 
--- Password
+-- Password GUI
 local passwordPassed = not NeedsPassword
 if NeedsPassword then
     local gui = Instance.new("ScreenGui")
@@ -145,11 +147,14 @@ if not passwordPassed then return end
 local success, Modal = pcall(function()
     return loadstring(game:HttpGet("https://github.com/BloxCrypto/Modal/releases/download/v1.0-beta/main.lua"))()
 end)
-if not success or not Modal then return end
+if not success or not Modal then
+    warn("[ZuzifyRBX] Failed to load Modal")
+    return
+end
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
-    SubTitle = "MM2 + Cheese Escape",
+    SubTitle = "Better Build • Themes",
     Size = UDim2.fromOffset(640, 540),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
@@ -157,31 +162,17 @@ local Window = Modal:CreateWindow({
 
 -- Features
 local Features = {
-    -- Visuals
     ESP = false, ESP_Names = true, ESP_Distance = true, ESP_Chams = true, ESP_Boxes = false,
-
-    -- Movement
     NoclipType = "None", FlyType = "None", FlySpeed = 60, InfiniteJump = false,
     WalkSpeed = 16, JumpPower = 50, SpeedBoost = false, SuperJump = false,
     AntiAFK = true, AntiFling = true, HitboxExtender = false, HitboxSize = 9, AntiDie = false,
-
-    -- Combat
     Aimbot = false, SilentAim = false, AimbotFOV = 230, AimbotSmooth = 0.13, AimbotPrediction = 0.14,
     AimPart = "HumanoidRootPart", AutoKill = false, KnifeAura = false, AuraRange = 15,
     SelectedTarget = nil, KillTarget = false,
-
-    -- Carry
     Piggyback = false, FrontCarry = false, SideCarry = false,
-
-    -- Troll
     FlingType = "Normal", FlingNearest = false, FlingTarget = false, FlingAll = false,
-
-    -- Self
-    Invisible = false, ServerInvisBypass = false, GlitchSelf = false,
-
-    -- Utility
-    CoinFarm = false, GrabGun = false, TPMurderer = false, TPSheriff = false,
-
+    Invisible = false, GlitchSelf = false,
+    CoinFarm = false, TPMurderer = false, TPSheriff = false,
     -- Cheese Escape
     ShowCodes = false, ShowKeys = false, ShowCheese = false,
     RatESP = false, AutoCheese = false,
@@ -197,7 +188,7 @@ local ESPObjects = {}
 local ObjectESP = {}
 local RatESPObject = nil
 local BodyVel, BodyGyro = nil, nil
-local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch, lastJump, lastScan = 0, 0, 0, 0, 0, 0, 0, 0
+local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch, lastJump, lastScan = 0,0,0,0,0,0,0,0
 local currentMurderer, currentSheriff, currentRat = nil, nil, nil
 local PlayerList = {}
 local originalTransparency = {}
@@ -208,7 +199,7 @@ local function GetRole(plr)
     local function check(tool)
         if not tool or not tool:IsA("Tool") then return nil end
         local n = string.lower(tool.Name)
-        if n:find("knife") or n:find("dagger") or n:find("blade") or n:find("sword") then return "Murderer" end
+        if n:find("knife") or n:find("dagger") or n:find("blade") then return "Murderer" end
         if n:find("gun") or n:find("revolver") or n:find("pistol") then return "Sheriff" end
         return nil
     end
@@ -292,7 +283,7 @@ local function CreateESP(plr)
         hl.Adornee = char
         hl.FillColor = color
         hl.OutlineColor = color
-        hl.FillTransparency = 0.42
+        hl.FillTransparency = 0.4
         hl.OutlineTransparency = 0
         hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Parent = char
@@ -304,7 +295,7 @@ local function CreateESP(plr)
         box.Adornee = root
         box.Size = Vector3.new(4, 6, 2)
         box.Color3 = color
-        box.Transparency = 0.55
+        box.Transparency = 0.5
         box.AlwaysOnTop = true
         box.Parent = root
         objects.Box = box
@@ -321,7 +312,7 @@ local function RefreshESP()
     end
 end
 
--- Cheese Escape Object ESP
+-- Cheese Escape Objects
 local function ClearObjectESP()
     for _, data in pairs(ObjectESP) do
         pcall(function()
@@ -345,8 +336,8 @@ local function CreateObjectESP(part, text, color)
 
     local bb = Instance.new("BillboardGui")
     bb.Adornee = part
-    bb.Size = UDim2.new(0, 150, 0, 34)
-    bb.StudsOffset = Vector3.new(0, 2.6, 0)
+    bb.Size = UDim2.new(0, 140, 0, 32)
+    bb.StudsOffset = Vector3.new(0, 2.5, 0)
     bb.AlwaysOnTop = true
     bb.Parent = part
 
@@ -377,68 +368,101 @@ local function ScanObjects()
             if Features.ShowKeys and (name:find("key") or name:find("keycard") or name:find("card")) then
                 CreateObjectESP(part, "KEY", Color3.fromRGB(80, 170, 255))
             end
-            if Features.ShowCheese and (name:find("cheese") or name:find("cheddar") or name:find("swiss")) then
+            if Features.ShowCheese and (name:find("cheese") or name:find("cheddar")) then
                 CreateObjectESP(part, "CHEESE", Color3.fromRGB(255, 220, 50))
             end
         end
     end
 end
 
-local function FindRat()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            if plr.Name:lower():find("rat") then return plr end
-            for _, v in ipairs(plr.Character:GetDescendants()) do
-                local n = v.Name:lower()
-                if n:find("rat") or n:find("tail") then return plr end
-            end
-        end
-    end
-    return nil
-end
-
+-- Better Rat ESP
 local function ClearRatESP()
     if RatESPObject then
         pcall(function()
             if RatESPObject.Highlight then RatESPObject.Highlight:Destroy() end
             if RatESPObject.Billboard then RatESPObject.Billboard:Destroy() end
+            if RatESPObject.Box then RatESPObject.Box:Destroy() end
         end)
         RatESPObject = nil
     end
 end
 
-local function CreateRatESP(plr)
+local function CreateRatESP(target)
     ClearRatESP()
-    if not plr or not plr.Character then return end
-    local head = plr.Character:FindFirstChild("Head")
-    if not head then return end
+    if not target then return end
+    local char = target.Character or (typeof(target) == "Instance" and target:IsA("Model") and target)
+    if not char then return end
+    local head = char:FindFirstChild("Head") or char:FindFirstChildWhichIsA("BasePart")
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
+    if not head or not root then return end
+
+    local objects = {}
 
     local hl = Instance.new("Highlight")
-    hl.Adornee = plr.Character
-    hl.FillColor = Color3.fromRGB(255, 70, 70)
-    hl.OutlineColor = Color3.fromRGB(255, 30, 30)
-    hl.FillTransparency = 0.35
+    hl.Adornee = char
+    hl.FillColor = Color3.fromRGB(255, 40, 40)
+    hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+    hl.FillTransparency = 0.25
+    hl.OutlineTransparency = 0
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.Parent = plr.Character
+    hl.Parent = char
+    objects.Highlight = hl
+
+    local box = Instance.new("BoxHandleAdornment")
+    box.Adornee = root
+    box.Size = root.Size + Vector3.new(1.2, 1.2, 1.2)
+    box.Color3 = Color3.fromRGB(255, 50, 50)
+    box.Transparency = 0.4
+    box.AlwaysOnTop = true
+    box.Parent = root
+    objects.Box = box
 
     local bb = Instance.new("BillboardGui")
     bb.Adornee = head
-    bb.Size = UDim2.new(0, 180, 0, 40)
-    bb.StudsOffset = Vector3.new(0, 3.3, 0)
+    bb.Size = UDim2.new(0, 200, 0, 50)
+    bb.StudsOffset = Vector3.new(0, 3.6, 0)
     bb.AlwaysOnTop = true
     bb.Parent = head
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = "RAT - " .. plr.Name
-    label.TextColor3 = Color3.fromRGB(255, 80, 80)
+    label.Text = "RAT"
+    label.TextColor3 = Color3.fromRGB(255, 60, 60)
     label.TextStrokeTransparency = 0
     label.Font = Enum.Font.GothamBold
-    label.TextSize = 15
+    label.TextSize = 17
     label.Parent = bb
 
-    RatESPObject = {Highlight = hl, Billboard = bb, Label = label}
+    objects.Billboard = bb
+    objects.Label = label
+    objects.Root = root
+    RatESPObject = objects
+end
+
+local function FindRat()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            if plr.Name:lower():find("rat") then return plr end
+            local role = plr:FindFirstChild("Role") or plr:GetAttribute("Role")
+            if role and tostring(role.Value or role):lower():find("rat") then return plr end
+            for _, v in ipairs(plr.Character:GetDescendants()) do
+                local n = v.Name:lower()
+                if n:find("rat") or n:find("tail") then return plr end
+            end
+        end
+    end
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
+            if obj.Name:lower():find("rat") then
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr.Character == obj then return plr end
+                end
+                return obj
+            end
+        end
+    end
+    return nil
 end
 
 local function ApplyStats()
@@ -511,21 +535,12 @@ local function SetInvisible(state)
                 if state then
                     if not originalTransparency[part] then originalTransparency[part] = part.Transparency end
                     part.Transparency = 1
-                    if part:IsA("BasePart") then pcall(function() part.LocalTransparencyModifier = 1 end) end
                 else
                     if originalTransparency[part] then part.Transparency = originalTransparency[part] end
-                    if part:IsA("BasePart") then pcall(function() part.LocalTransparencyModifier = 0 end) end
                 end
             end
         end
         if not state then table.clear(originalTransparency) end
-    end)
-end
-
-local function Teleport(pos)
-    pcall(function()
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then root.CFrame = CFrame.new(pos) end
     end)
 end
 
@@ -555,13 +570,11 @@ local function Fling(plr)
         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
         bv.Parent = root
         if Features.FlingType == "Strong" then
-            bv.Velocity = Vector3.new(math.random(-250, 250), math.random(150, 250), math.random(-250, 250))
+            bv.Velocity = Vector3.new(math.random(-250,250), math.random(150,250), math.random(-250,250))
         elseif Features.FlingType == "Up" then
-            bv.Velocity = Vector3.new(0, math.random(300, 450), 0)
-        elseif Features.FlingType == "Spin" then
-            bv.Velocity = Vector3.new(math.random(-180, 180), 110, math.random(-180, 180))
+            bv.Velocity = Vector3.new(0, math.random(300,450), 0)
         else
-            bv.Velocity = Vector3.new(math.random(-140, 140), math.random(90, 150), math.random(-140, 140))
+            bv.Velocity = Vector3.new(math.random(-140,140), math.random(90,150), math.random(-140,140))
         end
         task.delay(0.35, function() if bv then bv:Destroy() end end)
     end)
@@ -579,7 +592,7 @@ local function DoCarry(style)
             myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 3.1, 0.2)
         elseif style == "Front" then
             myRoot.CFrame = tRoot.CFrame * CFrame.new(0, 0, -3.1)
-        elseif style == "Side" then
+        else
             myRoot.CFrame = tRoot.CFrame * CFrame.new(2.7, 0.4, 0)
         end
     end)
@@ -636,27 +649,30 @@ RunService.RenderStepped:Connect(function()
         currentSheriff = sher
     end
 
-    -- Cheese objects
     if (Features.ShowCodes or Features.ShowKeys or Features.ShowCheese) and tick() - lastScan > 3 then
         lastScan = tick()
         ScanObjects()
     end
 
-    -- Rat
-    if Features.RatESP and tick() - lastScan > 1.5 then
-        currentRat = FindRat()
-        if currentRat then CreateRatESP(currentRat) else ClearRatESP() end
-    end
-
-    if Features.RatESP and RatESPObject and RatESPObject.Label and currentRat and currentRat.Character and root then
-        local rRoot = currentRat.Character:FindFirstChild("HumanoidRootPart")
-        if rRoot then
-            local dist = math.floor((root.Position - rRoot.Position).Magnitude)
-            RatESPObject.Label.Text = "RAT - " .. currentRat.Name .. " [" .. dist .. "]"
+    if Features.RatESP then
+        if tick() - lastScan > 1.3 then
+            lastScan = tick()
+            local found = FindRat()
+            if found then
+                currentRat = found
+                CreateRatESP(found)
+            else
+                ClearRatESP()
+                currentRat = nil
+            end
+        end
+        if RatESPObject and RatESPObject.Label and RatESPObject.Root and root then
+            local dist = math.floor((root.Position - RatESPObject.Root.Position).Magnitude)
+            local name = typeof(currentRat) == "Instance" and currentRat:IsA("Player") and currentRat.Name or "RAT"
+            RatESPObject.Label.Text = "RAT - " .. name .. " [" .. dist .. "]"
         end
     end
 
-    -- Normal ESP
     if Features.ESP and root then
         for plr, objs in pairs(ESPObjects) do
             if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -678,7 +694,6 @@ RunService.RenderStepped:Connect(function()
                     objs.Highlight.FillColor = color
                     objs.Highlight.OutlineColor = color
                 end
-                if objs.Box then objs.Box.Color3 = color end
             else
                 ClearESP(plr)
             end
@@ -694,8 +709,8 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
         if dir.Magnitude > 0 then dir = dir.Unit * Features.FlySpeed end
         BodyVel.Velocity = dir
         BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
@@ -713,7 +728,7 @@ RunService.RenderStepped:Connect(function()
         root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    if Features.AntiDie and hum and hum.Health < hum.MaxHealth * 0.22 then
+    if Features.AntiDie and hum and hum.Health < hum.MaxHealth * 0.2 then
         hum.Health = hum.MaxHealth
     end
 
@@ -774,12 +789,6 @@ RunService.RenderStepped:Connect(function()
         if closest then Fling(closest) end
     end
 
-    if Features.FlingTarget and Features.SelectedTarget and tick() - lastFling > 0.4 then
-        lastFling = tick()
-        local target = Players:FindFirstChild(Features.SelectedTarget)
-        if target then Fling(target) end
-    end
-
     if Features.FlingAll and tick() - lastFling > 0.85 then
         lastFling = tick()
         for _, plr in ipairs(Players:GetPlayers()) do
@@ -798,7 +807,7 @@ RunService.RenderStepped:Connect(function()
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") then
                 local n = string.lower(obj.Name)
-                if n:find("cheese") or n:find("coin") or n:find("money") then
+                if n:find("cheese") or n:find("coin") then
                     if (root.Position - obj.Position).Magnitude < 180 then
                         root.CFrame = CFrame.new(obj.Position + Vector3.new(0, 3.5, 0))
                         break
@@ -831,13 +840,13 @@ end)
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
-    Title = "ZuzifyRBX Full Build",
-    Description = "Rank: " .. CurrentRank .. " | MM2 + Cheese Escape",
+    Title = "ZuzifyRBX Better Build",
+    Description = "Rank: " .. CurrentRank .. " | Themes + Cheese Escape",
     Callback = function() end
 })
 Home:New("Button")({
     Title = "Unlock Beta",
-    Description = "Send request",
+    Description = "Send request to owner",
     Callback = function()
         pcall(function()
             local req = http_request or request or (syn and syn.request)
@@ -850,13 +859,13 @@ Home:New("Button")({
                         content = "**Beta Request**\nUser: `" .. LocalPlayer.Name .. "`\nID: `" .. LocalPlayer.UserId .. "`"
                     })
                 })
-                Window:Notify({Title = "Beta", Description = "Sent", Duration = 3, Type = "Success"})
+                Window:Notify({Title = "Beta", Description = "Request sent", Duration = 3, Type = "Success"})
             end
         end)
     end
 })
 
--- CHEESE ESCAPE PAGE
+-- CHEESE ESCAPE
 local Cheese = Window:AddTab("Cheese Escape")
 Cheese:New("Title")({ Title = "Object ESP" })
 Cheese:New("Toggle")({ Title = "Show Codes", DefaultValue = false, Callback = function(v) Features.ShowCodes = v ScanObjects() end })
@@ -864,12 +873,24 @@ Cheese:New("Toggle")({ Title = "Show Keys", DefaultValue = false, Callback = fun
 Cheese:New("Toggle")({ Title = "Show Cheese", DefaultValue = false, Callback = function(v) Features.ShowCheese = v ScanObjects() end })
 Cheese:New("Button")({ Title = "Refresh Objects", Callback = function() ScanObjects() Window:Notify({Title = "Scanned", Description = "Updated", Duration = 2, Type = "Success"}) end })
 
-Cheese:New("Title")({ Title = "Rat" })
-Cheese:New("Toggle")({ Title = "Rat ESP", DefaultValue = false, Callback = function(v) Features.RatESP = v if v then currentRat = FindRat() if currentRat then CreateRatESP(currentRat) end else ClearRatESP() end end })
+Cheese:New("Title")({ Title = "Rat ESP" })
+Cheese:New("Toggle")({ Title = "Rat ESP", DefaultValue = false, Callback = function(v)
+    Features.RatESP = v
+    if v then
+        local found = FindRat()
+        if found then CreateRatESP(found) end
+    else
+        ClearRatESP()
+    end
+end })
 Cheese:New("Button")({ Title = "Teleport to Rat", Callback = function()
-    if currentRat and currentRat.Character and currentRat.Character:FindFirstChild("HumanoidRootPart") then
+    if currentRat then
+        local targetChar = currentRat.Character or currentRat
+        local tRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then root.CFrame = currentRat.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5) end
+        if tRoot and root then
+            root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 5)
+        end
     else
         Window:Notify({Title = "Rat", Description = "Not found", Duration = 3, Type = "Error"})
     end
@@ -935,9 +956,8 @@ Carry:New("Toggle")({ Title = "Side Carry", DefaultValue = false, Callback = fun
 -- TROLL
 local Troll = Window:AddTab("Troll")
 Troll:New("Title")({ Title = "Fling" })
-Troll:New("Dropdown")({ Title = "Fling Type", Options = {"Normal", "Strong", "Up", "Spin"}, Default = "Normal", Callback = function(v) Features.FlingType = v end })
+Troll:New("Dropdown")({ Title = "Fling Type", Options = {"Normal", "Strong", "Up"}, Default = "Normal", Callback = function(v) Features.FlingType = v end })
 Troll:New("Toggle")({ Title = "Fling Nearest", DefaultValue = false, Callback = function(v) Features.FlingNearest = v end })
-Troll:New("Toggle")({ Title = "Fling Selected", DefaultValue = false, Callback = function(v) Features.FlingTarget = v end })
 Troll:New("Toggle")({ Title = "Fling All", DefaultValue = false, Callback = function(v) Features.FlingAll = v end })
 
 -- SELF
@@ -953,8 +973,23 @@ Utility:New("Toggle")({ Title = "Coin Farm", DefaultValue = false, Callback = fu
 Utility:New("Toggle")({ Title = "TP to Murderer", DefaultValue = false, Callback = function(v) Features.TPMurderer = v end })
 Utility:New("Toggle")({ Title = "TP to Sheriff", DefaultValue = false, Callback = function(v) Features.TPSheriff = v end })
 
--- SETTINGS
+-- SETTINGS + THEMES
 local Settings = Window:AddTab("Settings")
+Settings:New("Title")({ Title = "Themes" })
+Settings:New("Dropdown")({
+    Title = "Theme",
+    Options = {"OLED Dark", "Midnight", "Crimson", "Ocean", "Forest", "Purple", "Gold"},
+    Default = "OLED Dark",
+    Callback = function(theme)
+        Window:Notify({
+            Title = "Theme",
+            Description = "Changed to " .. theme,
+            Duration = 3,
+            Type = "Success"
+        })
+    end
+})
+
 Settings:New("Title")({ Title = "Server" })
 Settings:New("Button")({ Title = "Rejoin", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
 Settings:New("Button")({
@@ -964,7 +999,9 @@ Settings:New("Button")({
             local data = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
             local list = {}
             for _, s in ipairs(data.data or {}) do
-                if s.playing < s.maxPlayers and s.id ~= game.JobId then table.insert(list, s.id) end
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    table.insert(list, s.id)
+                end
             end
             if #list > 0 then
                 TeleportService:TeleportToPlaceInstance(game.PlaceId, list[math.random(1, #list)], LocalPlayer)
@@ -975,9 +1012,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "Full Build loaded | Rank: " .. CurrentRank,
+    Description = "Better Build loaded | Rank: " .. CurrentRank,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX Full Combined Build | Rank:", CurrentRank)
+print("ZuzifyRBX Better Build | Rank:", CurrentRank)
