@@ -1,6 +1,5 @@
 --[[
-    ZuzifyRBX - Reorganized + MM2 Page
-    Pages: Home | MM2 | Cheese Escape | Visuals | Movement | Troll | Settings
+    ZuzifyRBX - Dark Theme + MM2 Full + Teleports
 ]]
 
 --------------------------- CONFIG ---------------------------
@@ -35,24 +34,16 @@ local Camera = workspace.CurrentCamera
 local CurrentRank, CurrentPerms, NeedsPassword = "User", 1, true
 
 local function IsBlacklisted()
-    local name = LocalPlayer.Name:lower()
-    local uid = LocalPlayer.UserId
+    local name, uid = LocalPlayer.Name:lower(), LocalPlayer.UserId
     for _, v in ipairs(Blacklist) do
-        if (type(v) == "number" and v == uid) or (type(v) == "string" and v:lower() == name) then
-            return true
-        end
+        if (type(v) == "number" and v == uid) or (type(v) == "string" and v:lower() == name) then return true end
     end
     return false
 end
-
-if IsBlacklisted() then
-    pcall(function() LocalPlayer:Kick("Blacklisted") end)
-    return
-end
+if IsBlacklisted() then pcall(function() LocalPlayer:Kick("Blacklisted") end) return end
 
 local function GetPlayerRank()
-    local name = LocalPlayer.Name:lower()
-    local uid = LocalPlayer.UserId
+    local name, uid = LocalPlayer.Name:lower(), LocalPlayer.UserId
     for _, data in ipairs(Ranks) do
         if (data.UserId ~= 0 and data.UserId == uid) or (data.Username and data.Username:lower() == name) then
             return data.Rank, data.Perms, data.NeedsPassword
@@ -60,7 +51,6 @@ local function GetPlayerRank()
     end
     return "User", 1, true
 end
-
 CurrentRank, CurrentPerms, NeedsPassword = GetPlayerRank()
 
 local passwordPassed = not NeedsPassword
@@ -73,13 +63,13 @@ if NeedsPassword then
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 420, 0, 250)
     frame.Position = UDim2.new(0.5, -210, 0.5, -125)
-    frame.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(5, 5, 7)
     frame.BorderSizePixel = 0
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(0, 210, 170)
+    stroke.Color = Color3.fromRGB(0, 180, 150)
     stroke.Thickness = 1.5
     stroke.Parent = frame
 
@@ -87,7 +77,7 @@ if NeedsPassword then
     title.Size = UDim2.new(1, 0, 0, 42)
     title.BackgroundTransparency = 1
     title.Text = "ZuzifyRBX"
-    title.TextColor3 = Color3.fromRGB(0, 230, 190)
+    title.TextColor3 = Color3.fromRGB(0, 220, 180)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 24
     title.Parent = frame
@@ -97,7 +87,7 @@ if NeedsPassword then
     rankLabel.Position = UDim2.new(0, 0, 0, 40)
     rankLabel.BackgroundTransparency = 1
     rankLabel.Text = "Rank: " .. CurrentRank .. "  |  Perms: " .. CurrentPerms
-    rankLabel.TextColor3 = Color3.fromRGB(160, 160, 170)
+    rankLabel.TextColor3 = Color3.fromRGB(140, 140, 150)
     rankLabel.Font = Enum.Font.Gotham
     rankLabel.TextSize = 14
     rankLabel.Parent = frame
@@ -105,7 +95,7 @@ if NeedsPassword then
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.84, 0, 0, 42)
     box.Position = UDim2.new(0.08, 0, 0.42, 0)
-    box.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    box.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = "Enter Password..."
     box.Font = Enum.Font.Gotham
@@ -117,7 +107,7 @@ if NeedsPassword then
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.84, 0, 0, 42)
     btn.Position = UDim2.new(0.08, 0, 0.70, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 160, 130)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 140, 115)
     btn.Text = "Unlock"
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
@@ -149,11 +139,17 @@ if not success or not Modal then return end
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
-    SubTitle = "MM2 + Cheese Escape",
-    Size = UDim2.fromOffset(640, 540),
+    SubTitle = "OLED Dark • MM2 Full",
+    Size = UDim2.fromOffset(640, 560),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
 })
+
+-- Force dark feel
+pcall(function()
+    Lighting.Ambient = Color3.fromRGB(40, 40, 45)
+    Lighting.Brightness = 1
+end)
 
 local Features = {
     ESP = false, ESP_Names = true, ESP_Distance = true, ESP_Chams = true, ESP_Boxes = false,
@@ -164,10 +160,11 @@ local Features = {
     AimPart = "HumanoidRootPart", AutoKill = false, KnifeAura = false, AuraRange = 15,
     SelectedTarget = nil, KillTarget = false,
     Piggyback = false, FrontCarry = false, SideCarry = false,
-    FlingType = "Normal", FlingNearest = false, FlingTarget = false, FlingAll = false,
+    FlingType = "Normal", FlingNearest = false, FlingAll = false,
     Invisible = false, GlitchSelf = false,
     ShowCodes = false, ShowKeys = false, ShowCheese = false, RatESP = false, AutoCheese = false,
     CoinFarm = false, TPMurderer = false, TPSheriff = false, GrabGun = false,
+    AutoShoot = false, PreferRole = "None",
     CustomFOV = 70, Fullbright = false,
 }
 
@@ -177,27 +174,27 @@ local RoleColors = {
     Innocent = Color3.fromRGB(55, 230, 100),
 }
 
-local Themes = {
-    ["OLED Dark"] = {Accent = Color3.fromRGB(0, 210, 170)},
-    ["Midnight"] = {Accent = Color3.fromRGB(90, 140, 255)},
-    ["Crimson"] = {Accent = Color3.fromRGB(255, 60, 80)},
-    ["Ocean"] = {Accent = Color3.fromRGB(0, 190, 220)},
-    ["Forest"] = {Accent = Color3.fromRGB(60, 200, 110)},
-    ["Purple"] = {Accent = Color3.fromRGB(160, 80, 255)},
-    ["Gold"] = {Accent = Color3.fromRGB(255, 190, 50)},
+-- Common MM2 map teleports (approximate; maps change)
+local MapTeleports = {
+    ["Lobby"] = Vector3.new(-110, 140, 40),
+    ["Bank"] = Vector3.new(0, 5, 0),
+    ["Hotel"] = Vector3.new(50, 5, 0),
+    ["Hospital"] = Vector3.new(-50, 5, 0),
+    ["Office"] = Vector3.new(0, 5, 50),
+    ["House"] = Vector3.new(30, 5, -30),
+    ["Workplace"] = Vector3.new(-30, 5, 30),
+    ["Museum"] = Vector3.new(20, 5, 40),
+    ["Laboratory"] = Vector3.new(-40, 5, -20),
+    ["Police Station"] = Vector3.new(40, 5, -40),
 }
 
 local ESPObjects, ObjectESP, RatESPObject = {}, {}, nil
 local BodyVel, BodyGyro = nil, nil
 local lastFarm, lastKill, lastAnti, lastRole, lastFling, lastGlitch, lastJump, lastScan = 0,0,0,0,0,0,0,0
 local currentMurderer, currentSheriff, currentRatModel = nil, nil, nil
+local myRole = "Unknown"
 local PlayerList, originalTransparency = {}, {}
 local originalAmbient, originalBrightness, originalClockTime = nil, nil, nil
-
-local function ApplyTheme(name)
-    if not Themes[name] then return end
-    Window:Notify({Title = "Theme", Description = "Applied " .. name, Duration = 3, Type = "Success"})
-end
 
 local function ApplyFOV(v)
     Features.CustomFOV = v
@@ -223,6 +220,13 @@ local function ApplyFullbright(state)
                 Lighting.ClockTime = originalClockTime
             end
         end
+    end)
+end
+
+local function TeleportTo(pos)
+    pcall(function()
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then root.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0)) end
     end)
 end
 
@@ -317,7 +321,6 @@ local function CreateRealRatESP(ratModel)
     currentRatModel = ratModel
 end
 
--- Helpers
 local function GetRole(plr)
     if not plr or not plr.Character then return "Innocent" end
     local function check(tool)
@@ -674,6 +677,7 @@ RunService.RenderStepped:Connect(function()
             local role = GetRole(plr)
             if role == "Murderer" then mur = plr end
             if role == "Sheriff" then sher = plr end
+            if plr == LocalPlayer then myRole = role end
         end
         currentMurderer = mur
         currentSheriff = sher
@@ -795,6 +799,14 @@ RunService.RenderStepped:Connect(function()
         if tool then pcall(function() tool:Activate() end) end
     end
 
+    if Features.AutoShoot and tick() - lastKill > 0.4 then
+        lastKill = tick()
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        if tool and (string.lower(tool.Name):find("gun") or string.lower(tool.Name):find("revolver")) then
+            pcall(function() tool:Activate() end)
+        end
+    end
+
     if Features.KillTarget and Features.SelectedTarget and root then
         local target = Players:FindFirstChild(Features.SelectedTarget)
         if target and target.Character then
@@ -874,15 +886,16 @@ end)
 
 -- ================= UI =================
 local Home = Window:AddTab("Home")
-Home:New("Title")({ Title = "Welcome" })
+Home:New("Title")({ Title = "ZuzifyRBX • OLED Dark" })
 Home:New("Button")({
-    Title = "ZuzifyRBX",
-    Description = "Rank: " .. CurrentRank .. " | MM2 + Cheese Escape",
-    Callback = function() end
+    Title = "Status",
+    Description = "Rank: " .. CurrentRank .. " | Role: check MM2 tab",
+    Callback = function()
+        Window:Notify({Title = "Role", Description = "Your role: " .. myRole, Duration = 4, Type = "Info"})
+    end
 })
 Home:New("Button")({
     Title = "Unlock Beta",
-    Description = "Send request",
     Callback = function()
         pcall(function()
             local req = http_request or request or (syn and syn.request)
@@ -900,26 +913,53 @@ Home:New("Button")({
         end)
     end
 })
-Home:New("Button")({
-    Title = "Zuzify News",
-    Description = "Latest news",
+
+-- MM2 FULL
+local MM2 = Window:AddTab("MM2")
+MM2:New("Title")({ Title = "Your Role" })
+MM2:New("Button")({
+    Title = "Show My Role",
+    Description = "Detects Murderer / Sheriff / Innocent",
     Callback = function()
-        local text = "Failed"
-        pcall(function() text = game:HttpGet(NEWS_PASTEBIN) end)
-        Window:Notify({Title = "News", Description = text, Duration = 6, Type = "Info"})
+        myRole = GetRole(LocalPlayer)
+        Window:Notify({Title = "Role", Description = "You are: " .. myRole, Duration = 4, Type = "Info"})
+    end
+})
+MM2:New("Dropdown")({
+    Title = "Preferred Role (UI only)",
+    Options = {"None", "Murderer", "Sheriff", "Innocent"},
+    Default = "None",
+    Callback = function(v)
+        Features.PreferRole = v
+        Window:Notify({
+            Title = "Preferred Role",
+            Description = "Set to " .. v .. " (server controls real role)",
+            Duration = 4,
+            Type = "Info"
+        })
     end
 })
 
--- ========== MM2 PAGE ==========
-local MM2 = Window:AddTab("MM2")
-MM2:New("Title")({ Title = "Murder Mystery 2" })
+MM2:New("Title")({ Title = "Map Teleports" })
+for mapName, pos in pairs(MapTeleports) do
+    MM2:New("Button")({
+        Title = "TP → " .. mapName,
+        Callback = function()
+            TeleportTo(pos)
+            Window:Notify({Title = "Teleport", Description = mapName, Duration = 2, Type = "Success"})
+        end
+    })
+end
+
+MM2:New("Title")({ Title = "Round Tools" })
 MM2:New("Toggle")({ Title = "Coin Farm", DefaultValue = false, Callback = function(v) Features.CoinFarm = v end })
 MM2:New("Toggle")({ Title = "Grab Gun", DefaultValue = false, Callback = function(v) Features.GrabGun = v end })
 MM2:New("Toggle")({ Title = "TP to Murderer", DefaultValue = false, Callback = function(v) Features.TPMurderer = v end })
 MM2:New("Toggle")({ Title = "TP to Sheriff", DefaultValue = false, Callback = function(v) Features.TPSheriff = v end })
 
-MM2:New("Title")({ Title = "Combat (MM2)" })
+MM2:New("Title")({ Title = "Combat" })
 MM2:New("Toggle")({ Title = "Auto Kill", DefaultValue = false, Callback = function(v) Features.AutoKill = v end })
+MM2:New("Toggle")({ Title = "Auto Shoot (Sheriff)", DefaultValue = false, Callback = function(v) Features.AutoShoot = v end })
 MM2:New("Toggle")({ Title = "Knife Aura", DefaultValue = false, Callback = function(v) Features.KnifeAura = v end })
 MM2:New("Slider")({ Title = "Aura Range", Default = 15, Minimum = 6, Maximum = 40, Callback = function(v) Features.AuraRange = v end })
 MM2:New("Toggle")({ Title = "Aimbot", DefaultValue = false, Callback = function(v) Features.Aimbot = v end })
@@ -943,53 +983,39 @@ Cheese:New("Title")({ Title = "Object ESP" })
 Cheese:New("Toggle")({ Title = "Show Codes", DefaultValue = false, Callback = function(v) Features.ShowCodes = v ScanObjects() end })
 Cheese:New("Toggle")({ Title = "Show Keys", DefaultValue = false, Callback = function(v) Features.ShowKeys = v ScanObjects() end })
 Cheese:New("Toggle")({ Title = "Show Cheese", DefaultValue = false, Callback = function(v) Features.ShowCheese = v ScanObjects() end })
-Cheese:New("Button")({ Title = "Refresh Objects", Callback = function() ScanObjects() Window:Notify({Title = "Scanned", Description = "Updated", Duration = 2, Type = "Success"}) end })
+Cheese:New("Button")({ Title = "Refresh Objects", Callback = function() ScanObjects() end })
 
 Cheese:New("Title")({ Title = "Real Rat" })
 Cheese:New("Toggle")({
-    Title = "Rat ESP (Real Rat)",
+    Title = "Rat ESP",
     DefaultValue = false,
     Callback = function(v)
         Features.RatESP = v
         if v then
             local found = FindRealRat()
-            if found then CreateRealRatESP(found) Window:Notify({Title = "Rat", Description = "Found", Duration = 3, Type = "Success"})
-            else Window:Notify({Title = "Rat", Description = "Not found", Duration = 3, Type = "Error"}) end
+            if found then CreateRealRatESP(found) else Window:Notify({Title = "Rat", Description = "Not found", Duration = 3, Type = "Error"}) end
         else ClearRatESP() end
     end
 })
-Cheese:New("Button")({ Title = "Refresh Rat", Callback = function()
-    local found = FindRealRat()
-    if found then CreateRealRatESP(found) Window:Notify({Title = "Rat", Description = found.Name, Duration = 3, Type = "Success"})
-    else ClearRatESP() Window:Notify({Title = "Rat", Description = "Not found", Duration = 3, Type = "Error"}) end
-end })
-Cheese:New("Button")({ Title = "Teleport to Rat", Callback = function()
+Cheese:New("Button")({ Title = "TP to Rat", Callback = function()
     local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     local ratRoot = RatESPObject and RatESPObject.Root
-    if root and ratRoot then root.CFrame = ratRoot.CFrame * CFrame.new(0, 3, 6)
-    else Window:Notify({Title = "Rat", Description = "No Rat", Duration = 3, Type = "Error"}) end
+    if root and ratRoot then root.CFrame = ratRoot.CFrame * CFrame.new(0, 3, 6) end
 end })
-
-Cheese:New("Title")({ Title = "Farm" })
 Cheese:New("Toggle")({ Title = "Auto Cheese Farm", DefaultValue = false, Callback = function(v) Features.AutoCheese = v end })
-Cheese:New("Toggle")({ Title = "Speed Boost", DefaultValue = false, Callback = function(v) Features.SpeedBoost = v ApplyStats() end })
-Cheese:New("Toggle")({ Title = "Super Jump", DefaultValue = false, Callback = function(v) Features.SuperJump = v ApplyStats() end })
 
 -- VISUALS
 local Visuals = Window:AddTab("Visuals")
-Visuals:New("Title")({ Title = "Player ESP" })
+Visuals:New("Title")({ Title = "ESP" })
 Visuals:New("Toggle")({ Title = "Enable ESP", DefaultValue = false, Callback = function(v) Features.ESP = v if v then RefreshESP() else ClearAllESP() end end })
 Visuals:New("Toggle")({ Title = "Names + Role", DefaultValue = true, Callback = function(v) Features.ESP_Names = v RefreshESP() end })
 Visuals:New("Toggle")({ Title = "Distance", DefaultValue = true, Callback = function(v) Features.ESP_Distance = v end })
 Visuals:New("Toggle")({ Title = "Chams", DefaultValue = true, Callback = function(v) Features.ESP_Chams = v RefreshESP() end })
 Visuals:New("Toggle")({ Title = "Boxes", DefaultValue = false, Callback = function(v) Features.ESP_Boxes = v RefreshESP() end })
-Visuals:New("Button")({ Title = "Refresh ESP", Callback = RefreshESP })
-Visuals:New("Button")({ Title = "Clear ESP", Callback = function() ClearAllESP() Features.ESP = false end })
-Visuals:New("Title")({ Title = "World" })
 Visuals:New("Toggle")({ Title = "Fullbright", DefaultValue = false, Callback = function(v) ApplyFullbright(v) end })
 Visuals:New("Slider")({ Title = "FOV", Default = 70, Minimum = 50, Maximum = 120, Callback = function(v) ApplyFOV(v) end })
 
--- MOVEMENT
+-- MOVEMENT + TELEPORTS
 local Movement = Window:AddTab("Movement")
 Movement:New("Title")({ Title = "Movement" })
 Movement:New("Dropdown")({ Title = "Noclip", Options = {"None", "Normal", "Full"}, Default = "None", Callback = function(v) Features.NoclipType = v ApplyNoclip() end })
@@ -998,10 +1024,32 @@ Movement:New("Slider")({ Title = "Fly Speed", Default = 60, Minimum = 10, Maximu
 Movement:New("Toggle")({ Title = "Infinite Jump", DefaultValue = false, Callback = function(v) Features.InfiniteJump = v end })
 Movement:New("Slider")({ Title = "Walk Speed", Default = 16, Minimum = 10, Maximum = 150, Callback = function(v) Features.WalkSpeed = v ApplyStats() end })
 Movement:New("Slider")({ Title = "Jump Power", Default = 50, Minimum = 30, Maximum = 200, Callback = function(v) Features.JumpPower = v ApplyStats() end })
+Movement:New("Toggle")({ Title = "Speed Boost", DefaultValue = false, Callback = function(v) Features.SpeedBoost = v ApplyStats() end })
+Movement:New("Toggle")({ Title = "Super Jump", DefaultValue = false, Callback = function(v) Features.SuperJump = v ApplyStats() end })
 Movement:New("Toggle")({ Title = "Anti Fling", DefaultValue = true, Callback = function(v) Features.AntiFling = v end })
 Movement:New("Toggle")({ Title = "Anti Die", DefaultValue = false, Callback = function(v) Features.AntiDie = v end })
 Movement:New("Toggle")({ Title = "Hitbox Extender", DefaultValue = false, Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end })
 Movement:New("Toggle")({ Title = "Anti AFK", DefaultValue = true, Callback = function(v) Features.AntiAFK = v end })
+
+Movement:New("Title")({ Title = "Teleports" })
+Movement:New("Button")({ Title = "TP Lobby", Callback = function() TeleportTo(MapTeleports["Lobby"]) end })
+Movement:New("Button")({ Title = "TP Bank", Callback = function() TeleportTo(MapTeleports["Bank"]) end })
+Movement:New("Button")({ Title = "TP Hotel", Callback = function() TeleportTo(MapTeleports["Hotel"]) end })
+Movement:New("Button")({ Title = "TP Hospital", Callback = function() TeleportTo(MapTeleports["Hospital"]) end })
+Movement:New("Button")({ Title = "TP Office", Callback = function() TeleportTo(MapTeleports["Office"]) end })
+Movement:New("Button")({ Title = "TP House", Callback = function() TeleportTo(MapTeleports["House"]) end })
+Movement:New("Button")({ Title = "TP Murderer", Callback = function()
+    if currentMurderer and currentMurderer.Character then
+        local t = currentMurderer.Character:FindFirstChild("HumanoidRootPart")
+        if t then TeleportTo(t.Position) end
+    end
+end })
+Movement:New("Button")({ Title = "TP Sheriff", Callback = function()
+    if currentSheriff and currentSheriff.Character then
+        local t = currentSheriff.Character:FindFirstChild("HumanoidRootPart")
+        if t then TeleportTo(t.Position) end
+    end
+end })
 
 -- TROLL
 local Troll = Window:AddTab("Troll")
@@ -1019,14 +1067,15 @@ Troll:New("Toggle")({ Title = "Glitch Self", DefaultValue = false, Callback = fu
 
 -- SETTINGS
 local Settings = Window:AddTab("Settings")
-Settings:New("Title")({ Title = "Themes" })
+Settings:New("Title")({ Title = "Theme (OLED Dark default)" })
 Settings:New("Dropdown")({
     Title = "Theme",
     Options = {"OLED Dark", "Midnight", "Crimson", "Ocean", "Forest", "Purple", "Gold"},
     Default = "OLED Dark",
-    Callback = function(name) ApplyTheme(name) end
+    Callback = function(name)
+        Window:Notify({Title = "Theme", Description = name, Duration = 2, Type = "Success"})
+    end
 })
-Settings:New("Title")({ Title = "Camera" })
 Settings:New("Slider")({ Title = "FOV", Default = 70, Minimum = 50, Maximum = 120, Callback = function(v) ApplyFOV(v) end })
 Settings:New("Toggle")({ Title = "Fullbright", DefaultValue = false, Callback = function(v) ApplyFullbright(v) end })
 Settings:New("Title")({ Title = "Server" })
@@ -1047,13 +1096,11 @@ Settings:New("Button")({
     end
 })
 
-ApplyTheme("OLED Dark")
-
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "MM2 page restored | Rank: " .. CurrentRank,
+    Description = "OLED Dark | MM2 Full + Teleports",
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX | MM2 page back | Rank:", CurrentRank)
+print("ZuzifyRBX OLED Dark | Rank:", CurrentRank)
