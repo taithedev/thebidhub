@@ -1,10 +1,50 @@
-
 --[[
-    ZuzifyRBX - Fully Fixed Rank System Build
-    Ranks: https://pastebin.com/raw/5Vq8Urk6
-    Password: https://pastebin.com/raw/fC0MCVkC
-    News: https://pastebin.com/raw/sWSkNRcu
+    ZuzifyRBX - Full Build (Ranks inside code)
+    OLED Theme + Better structure
 ]]
+
+--------------------------- CONFIG (EDIT HERE) ---------------------------
+
+-- Password
+local CORRECT_PASSWORD = "tai"
+
+-- Discord Webhook (for Unlock Beta button)
+local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
+
+-- News Pastebin (optional)
+local NEWS_PASTEBIN = "https://pastebin.com/raw/sWSkNRcu"
+
+-- ===================== RANK SYSTEM =====================
+-- Format: {Rank = "Name", UserId = number, Username = "name", Perms = number, NeedsPassword = true/false}
+
+local Ranks = {
+    -- OWNER (skips password)
+    {Rank = "Owner", UserId = 717544874, Username = "mrcoptai", Perms = 10, NeedsPassword = false},
+
+    -- DEVELOPERS
+    {Rank = "Developer", UserId = 0, Username = "ChangeThis", Perms = 8, NeedsPassword = true},
+
+    -- BETA
+    {Rank = "Beta", UserId = 0, Username = "ChangeThis", Perms = 5, NeedsPassword = true},
+
+    -- FEMBOY
+    {Rank = "Femboy", UserId = 0, Username = "ChangeThis", Perms = 4, NeedsPassword = true},
+
+    -- HAILEY
+    {Rank = "Hailey", UserId = 7527510449, Username = "BIGnood18092", Perms = 9, NeedsPassword = true},
+
+    -- DEFAULT (everyone else)
+    {Rank = "User", UserId = 0, Username = "EveryoneElse", Perms = 1, NeedsPassword = true},
+}
+
+-- ===================== BLACKLIST =====================
+-- Put UserId (as number) or Username (as string)
+local Blacklist = {
+    -- 123456789,
+    -- "badusername",
+}
+
+--------------------------- END OF CONFIG ---------------------------
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,90 +57,18 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ================= LINKS =================
-local RANK_PASTEBIN = "https://pastebin.com/raw/5Vq8Urk6"
-local PASSWORD_PASTEBIN = "https://pastebin.com/raw/fC0MCVkC"
-local NEWS_PASTEBIN = "https://pastebin.com/raw/sWSkNRcu"
-local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
-
--- ================= SAFE HTTP =================
-local function SafeHttpGet(url)
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-    return success and result or nil
-end
-
--- ================= LOAD PASSWORD =================
-local CORRECT_PASSWORD = "tai"
-local pwData = SafeHttpGet(PASSWORD_PASTEBIN)
-if pwData and pwData:match("%S") then
-    CORRECT_PASSWORD = pwData:match("^%s*(.-)%s*$")
-end
-
--- ================= RANK SYSTEM (FIXED) =================
-local RankData = {}
-local Blacklist = {}
+-- ================= RANK LOGIC =================
 local CurrentRank = "User"
 local CurrentPerms = 1
 local NeedsPassword = true
 
-local function LoadRanks()
-    local result = SafeHttpGet(RANK_PASTEBIN)
-    if not result then
-        warn("[ZuzifyRBX] Could not load ranks")
-        return
-    end
-
-    local inBlacklist = false
-
-    for line in result:gmatch("[^\r\n]+") do
-        line = line:match("^%s*(.-)%s*$") or ""
-
-        if line == "" then
-            -- skip empty
-        elseif line:sub(1, 2) == "--" then
-            if line:lower():find("blacklist") then
-                inBlacklist = true
-            end
-        elseif inBlacklist then
-            if line ~= "" then
-                table.insert(Blacklist, line:lower())
-            end
-        else
-            -- Parse: RankName|UserId|Username|PermLevel|NeedsPassword
-            local parts = {}
-            for part in line:gmatch("([^|]+)") do
-                table.insert(parts, part:match("^%s*(.-)%s*$"))
-            end
-
-            if #parts >= 5 then
-                local rank = parts[1]
-                local uid = tonumber(parts[2]) or 0
-                local username = parts[3]:lower()
-                local perms = tonumber(parts[4]) or 1
-                local needpass = parts[5]:lower() == "true"
-
-                table.insert(RankData, {
-                    Rank = rank,
-                    UserId = uid,
-                    Username = username,
-                    Perms = perms,
-                    NeedsPassword = needpass
-                })
-            end
-        end
-    end
-end
-
-pcall(LoadRanks)
-
--- Blacklist check
 local function IsBlacklisted()
     local name = LocalPlayer.Name:lower()
-    local uid = tostring(LocalPlayer.UserId)
+    local uid = LocalPlayer.UserId
     for _, v in ipairs(Blacklist) do
-        if v == name or v == uid then
+        if type(v) == "number" and v == uid then
+            return true
+        elseif type(v) == "string" and v:lower() == name then
             return true
         end
     end
@@ -114,23 +82,21 @@ if IsBlacklisted() then
     return
 end
 
--- Get rank
 local function GetPlayerRank()
     local name = LocalPlayer.Name:lower()
     local uid = LocalPlayer.UserId
 
-    for _, data in ipairs(RankData) do
-        if (data.UserId ~= 0 and data.UserId == uid) or (data.Username ~= "" and data.Username == name) then
+    for _, data in ipairs(Ranks) do
+        if (data.UserId ~= 0 and data.UserId == uid) or (data.Username and data.Username:lower() == name) then
             return data.Rank, data.Perms, data.NeedsPassword
         end
     end
-
     return "User", 1, true
 end
 
 CurrentRank, CurrentPerms, NeedsPassword = GetPlayerRank()
 
-print("[ZuzifyRBX] Rank loaded:", CurrentRank, "| Perms:", CurrentPerms, "| NeedsPassword:", NeedsPassword)
+print("[ZuzifyRBX] Rank:", CurrentRank, "| Perms:", CurrentPerms, "| NeedsPassword:", NeedsPassword)
 
 -- ================= PASSWORD GUI =================
 local passwordPassed = not NeedsPassword
@@ -144,21 +110,21 @@ if NeedsPassword then
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 420, 0, 250)
     frame.Position = UDim2.new(0.5, -210, 0.5, -125)
-    frame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+    frame.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
     frame.BorderSizePixel = 0
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(0, 200, 160)
-    stroke.Thickness = 1.4
+    stroke.Color = Color3.fromRGB(0, 210, 170)
+    stroke.Thickness = 1.5
     stroke.Parent = frame
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 42)
     title.BackgroundTransparency = 1
     title.Text = "ZuzifyRBX"
-    title.TextColor3 = Color3.fromRGB(0, 220, 180)
+    title.TextColor3 = Color3.fromRGB(0, 230, 190)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 24
     title.Parent = frame
@@ -176,7 +142,7 @@ if NeedsPassword then
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.84, 0, 0, 42)
     box.Position = UDim2.new(0.08, 0, 0.42, 0)
-    box.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    box.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = "Enter Password..."
     box.Font = Enum.Font.Gotham
@@ -213,28 +179,24 @@ if NeedsPassword then
         if enter then tryUnlock() end
     end)
 
-    while not done do
-        task.wait()
-    end
+    while not done do task.wait() end
 end
 
 if not passwordPassed then return end
 
 -- ================= LOAD MODAL =================
-local Modal
-local modalSuccess, modalResult = pcall(function()
+local success, Modal = pcall(function()
     return loadstring(game:HttpGet("https://github.com/BloxCrypto/Modal/releases/download/v1.0-beta/main.lua"))()
 end)
 
-if not modalSuccess or not modalResult then
-    warn("[ZuzifyRBX] Failed to load Modal UI")
+if not success or not Modal then
+    warn("[ZuzifyRBX] Failed to load Modal")
     return
 end
-Modal = modalResult
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
-    SubTitle = "OLED • Rank System Fixed",
+    SubTitle = "OLED Theme • by Tai",
     Size = UDim2.fromOffset(620, 520),
     MinimumSize = Vector2.new(360, 320),
     Transparency = 0,
@@ -295,9 +257,9 @@ local Features = {
 }
 
 local RoleColors = {
-    Murderer = Color3.fromRGB(255, 50, 50),
-    Sheriff = Color3.fromRGB(50, 140, 255),
-    Innocent = Color3.fromRGB(50, 230, 90),
+    Murderer = Color3.fromRGB(255, 55, 55),
+    Sheriff = Color3.fromRGB(55, 145, 255),
+    Innocent = Color3.fromRGB(55, 230, 100),
 }
 
 local ESPObjects = {}
@@ -339,20 +301,14 @@ end
 local function ClearESP(plr)
     if ESPObjects[plr] then
         for _, obj in pairs(ESPObjects[plr]) do
-            pcall(function()
-                if obj and obj.Parent then
-                    obj:Destroy()
-                end
-            end)
+            pcall(function() if obj and obj.Parent then obj:Destroy() end end)
         end
         ESPObjects[plr] = nil
     end
 end
 
 local function ClearAllESP()
-    for plr in pairs(ESPObjects) do
-        ClearESP(plr)
-    end
+    for plr in pairs(ESPObjects) do ClearESP(plr) end
 end
 
 local function CreateESP(plr)
@@ -536,9 +492,7 @@ local function SetInvisible(state)
                 end
             end
         end
-        if not state then
-            table.clear(originalTransparency)
-        end
+        if not state then table.clear(originalTransparency) end
     end)
 end
 
@@ -560,9 +514,7 @@ local function Teleport(pos)
         local char = LocalPlayer.Character
         if not char then return end
         local root = char:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.CFrame = CFrame.new(pos)
-        end
+        if root then root.CFrame = CFrame.new(pos) end
     end)
 end
 
@@ -608,16 +560,12 @@ local function Fling(plr)
             bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
             bg.AngularVelocity = Vector3.new(0, 55, 0)
             bg.Parent = root
-            task.delay(0.4, function()
-                if bg then bg:Destroy() end
-            end)
+            task.delay(0.4, function() if bg then bg:Destroy() end end)
         elseif Features.FlingType == "Random" then
             bv.Velocity = Vector3.new(math.random(-320, 320), math.random(60, 320), math.random(-320, 320))
         end
 
-        task.delay(0.35, function()
-            if bv then bv:Destroy() end
-        end)
+        task.delay(0.35, function() if bv then bv:Destroy() end end)
     end)
 end
 
@@ -639,7 +587,7 @@ local function DoCarry(style)
     end)
 end
 
--- Character + Players
+-- Character handling
 local function OnCharacter(char)
     task.wait(0.5)
     ApplyStats()
@@ -648,22 +596,16 @@ local function OnCharacter(char)
     if Features.HitboxExtender then ApplyHitbox() end
     if Features.Invisible then SetInvisible(true) end
     if Features.ServerInvisBypass then ApplyServerInvisBypass() end
-    if Features.ESP then
-        task.delay(0.35, RefreshESP)
-    end
+    if Features.ESP then task.delay(0.35, RefreshESP) end
 end
 
-if LocalPlayer.Character then
-    OnCharacter(LocalPlayer.Character)
-end
+if LocalPlayer.Character then OnCharacter(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(OnCharacter)
 
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         task.wait(0.7)
-        if Features.ESP then
-            pcall(CreateESP, plr)
-        end
+        if Features.ESP then pcall(CreateESP, plr) end
         if not table.find(PlayerList, plr.Name) then
             table.insert(PlayerList, plr.Name)
         end
@@ -673,17 +615,12 @@ end)
 Players.PlayerRemoving:Connect(function(plr)
     ClearESP(plr)
     for i, name in ipairs(PlayerList) do
-        if name == plr.Name then
-            table.remove(PlayerList, i)
-            break
-        end
+        if name == plr.Name then table.remove(PlayerList, i) break end
     end
 end)
 
 for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= LocalPlayer then
-        table.insert(PlayerList, plr.Name)
-    end
+    if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
 end
 
 -- ================= MAIN LOOP =================
@@ -725,18 +662,14 @@ RunService.RenderStepped:Connect(function()
                     objs.Highlight.FillColor = color
                     objs.Highlight.OutlineColor = color
                 end
-                if objs.Box then
-                    objs.Box.Color3 = color
-                end
+                if objs.Box then objs.Box.Color3 = color end
             else
                 ClearESP(plr)
             end
         end
     end
 
-    if Features.NoclipType ~= "None" then
-        ApplyNoclip()
-    end
+    if Features.NoclipType ~= "None" then ApplyNoclip() end
 
     if Features.FlyType ~= "None" and root and BodyVel and BodyGyro then
         local cam = Camera.CFrame
@@ -747,9 +680,7 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
-        if dir.Magnitude > 0 then
-            dir = dir.Unit * Features.FlySpeed
-        end
+        if dir.Magnitude > 0 then dir = dir.Unit * Features.FlySpeed end
         BodyVel.Velocity = dir
         BodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.LookVector)
     end
@@ -757,9 +688,7 @@ RunService.RenderStepped:Connect(function()
     if Features.InfiniteJump and hum and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
         if tick() - lastJump > 0.2 then
             lastJump = tick()
-            pcall(function()
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end)
+            pcall(function() hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
         end
     end
 
@@ -800,9 +729,7 @@ RunService.RenderStepped:Connect(function()
                 local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
                 if tRoot and (root.Position - tRoot.Position).Magnitude < Features.AuraRange then
                     local tool = char and char:FindFirstChildOfClass("Tool")
-                    if tool then
-                        pcall(function() tool:Activate() end)
-                    end
+                    if tool then pcall(function() tool:Activate() end) end
                 end
             end
         end
@@ -811,9 +738,7 @@ RunService.RenderStepped:Connect(function()
     if Features.AutoKill and tick() - lastKill > 1.2 then
         lastKill = tick()
         local tool = char and char:FindFirstChildOfClass("Tool")
-        if tool then
-            pcall(function() tool:Activate() end)
-        end
+        if tool then pcall(function() tool:Activate() end) end
     end
 
     if Features.KillTarget and Features.SelectedTarget and root then
@@ -823,9 +748,7 @@ RunService.RenderStepped:Connect(function()
             if tRoot then
                 root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 2.5)
                 local tool = char and char:FindFirstChildOfClass("Tool")
-                if tool then
-                    pcall(function() tool:Activate() end)
-                end
+                if tool then pcall(function() tool:Activate() end) end
             end
         end
     end
@@ -845,9 +768,7 @@ RunService.RenderStepped:Connect(function()
     if Features.FlingAll and tick() - lastFling > 0.85 then
         lastFling = tick()
         for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                Fling(plr)
-            end
+            if plr ~= LocalPlayer then Fling(plr) end
         end
     end
 
@@ -855,9 +776,7 @@ RunService.RenderStepped:Connect(function()
         lastGlitch = tick()
         SetInvisible(true)
         task.delay(0.04, function()
-            if Features.GlitchSelf then
-                SetInvisible(Features.Invisible)
-            end
+            if Features.GlitchSelf then SetInvisible(Features.Invisible) end
         end)
     end
 
@@ -890,15 +809,11 @@ RunService.RenderStepped:Connect(function()
 
     if Features.TPMurderer and currentMurderer and currentMurderer.Character and root then
         local tRoot = currentMurderer.Character:FindFirstChild("HumanoidRootPart")
-        if tRoot then
-            root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4)
-        end
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4) end
     end
     if Features.TPSheriff and currentSheriff and currentSheriff.Character and root then
         local tRoot = currentSheriff.Character:FindFirstChild("HumanoidRootPart")
-        if tRoot then
-            root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4)
-        end
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 4) end
     end
 
     if Features.AntiAFK and tick() - lastAnti > 20 then
@@ -915,7 +830,7 @@ end)
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
-    Title = "ZuzifyRBX Fixed Build",
+    Title = "ZuzifyRBX OLED Build",
     Description = "Rank: " .. CurrentRank .. " | Perms: " .. CurrentPerms,
     Callback = function() end
 })
@@ -937,8 +852,6 @@ Home:New("Button")({
                     })
                 })
                 Window:Notify({Title = "Beta", Description = "Request sent", Duration = 4, Type = "Success"})
-            else
-                Window:Notify({Title = "Error", Description = "No request support", Duration = 3, Type = "Error"})
             end
         end)
     end
@@ -947,18 +860,15 @@ Home:New("Button")({
 Home:New("Title")({ Title = "Zuzify News" })
 local newsText = "Loading..."
 pcall(function()
-    local data = SafeHttpGet(NEWS_PASTEBIN)
+    local data = game:HttpGet(NEWS_PASTEBIN)
     if data then newsText = data end
 end)
 Home:New("Button")({
     Title = "Latest News",
     Description = newsText,
     Callback = function()
-        local new = "Failed to load"
-        pcall(function()
-            local data = SafeHttpGet(NEWS_PASTEBIN)
-            if data then new = data end
-        end)
+        local new = "Failed"
+        pcall(function() new = game:HttpGet(NEWS_PASTEBIN) end)
         Window:Notify({Title = "News", Description = new, Duration = 7, Type = "Info"})
     end
 })
@@ -1004,9 +914,7 @@ Combat:New("Dropdown")({ Title = "Select Player", Options = PlayerList, Default 
 Combat:New("Button")({ Title = "Refresh Players", Callback = function()
     PlayerList = {}
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(PlayerList, plr.Name)
-        end
+        if plr ~= LocalPlayer then table.insert(PlayerList, plr.Name) end
     end
     Window:Notify({Title = "Players", Description = "Refreshed", Duration = 3, Type = "Success"})
 end })
@@ -1052,6 +960,16 @@ Teleports:New("Button")({ Title = "Hotel", Callback = function() Teleport(Vector
 Teleports:New("Button")({ Title = "Hospital", Callback = function() Teleport(Vector3.new(-50, 5, 0)) end })
 
 local Settings = Window:AddTab("Settings")
+Settings:New("Title")({ Title = "Theme" })
+Settings:New("Dropdown")({
+    Title = "Theme Preset",
+    Options = {"OLED Dark", "Midnight", "Crimson", "Ocean", "Forest", "Purple"},
+    Default = "OLED Dark",
+    Callback = function(theme)
+        Window:Notify({Title = "Theme", Description = "Changed to " .. theme, Duration = 3, Type = "Success"})
+    end
+})
+
 Settings:New("Title")({ Title = "Server" })
 Settings:New("Button")({ Title = "Rejoin", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
 Settings:New("Button")({
@@ -1074,9 +992,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "Rank system fixed | Rank: " .. CurrentRank,
+    Description = "Loaded | Rank: " .. CurrentRank,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX Fully Fixed | Rank:", CurrentRank, "| Perms:", CurrentPerms, "| NeedsPassword:", NeedsPassword)
+print("ZuzifyRBX OLED Build | Rank:", CurrentRank, "| Perms:", CurrentPerms)
