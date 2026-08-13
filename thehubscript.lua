@@ -19,7 +19,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- ================= PASTEBIN RANK SYSTEM =================
-local RANK_PASTEBIN = "https://pastebin.com/raw/YOUR_PASTEBIN_ID_HERE" -- << PUT YOUR RAW LINK HERE
+local RANK_PASTEBIN = "https://pastebin.com/raw/6i1LFAPS" -- << PUT YOUR RAW LINK HERE
 
 local RankData = {}
 local CurrentRank = "User"
