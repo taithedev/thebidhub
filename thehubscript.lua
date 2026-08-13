@@ -1,10 +1,8 @@
 --[[
-    ZuzifyRBX - Full Build v3
-    - New rank system (NeedsPassword per rank)
-    - Blacklist support
-    - Game selector (MM2 / Cheese Escape / Other)
-    - Better flings + movement
-    - OLED style
+    ZuzifyRBX - Final Full Build
+    Ranks: https://pastebin.com/raw/5Vq8Urk6
+    Password: https://pastebin.com/raw/fC0MCVkC
+    News: https://pastebin.com/raw/sWSkNRcu
 ]]
 
 local Players = game:GetService("Players")
@@ -14,18 +12,18 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- ================= LINKS =================
-local RANK_PASTEBIN = "https://pastebin.com/raw/5Vq8Urk6" -- << put new rank pastebin here
-local PASSWORD_PASTEBIN = "https://pastebin.com/raw/fC0MCVkC" -- << password only pastebin
+local RANK_PASTEBIN = "https://pastebin.com/raw/5Vq8Urk6"
+local PASSWORD_PASTEBIN = "https://pastebin.com/raw/fC0MCVkC"
+local NEWS_PASTEBIN = "https://pastebin.com/raw/sWSkNRcu"
 local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
 
 -- ================= LOAD PASSWORD =================
-local CORRECT_PASSWORD = "password"
+local CORRECT_PASSWORD = "tai"
 pcall(function()
     local pw = game:HttpGet(PASSWORD_PASTEBIN)
     if pw and pw:match("%S") then
@@ -49,7 +47,9 @@ local function LoadRanks()
     local inBlacklist = false
     for line in result:gmatch("[^\r\n]+") do
         line = line:match("^%s*(.-)%s*$")
-        if line == "" or line:match("^%-%-") then
+        if line == "" then
+            -- skip
+        elseif line:match("^%-%-") then
             if line:lower():find("blacklist") then
                 inBlacklist = true
             end
@@ -74,7 +74,6 @@ end
 
 LoadRanks()
 
--- Check blacklist
 local function IsBlacklisted()
     local name = LocalPlayer.Name:lower()
     local uid = tostring(LocalPlayer.UserId)
@@ -87,7 +86,7 @@ local function IsBlacklisted()
 end
 
 if IsBlacklisted() then
-    LocalPlayer:Kick("You are blacklisted from ZuzifyRBX")
+    LocalPlayer:Kick("Blacklisted from ZuzifyRBX")
     return
 end
 
@@ -104,7 +103,7 @@ end
 
 CurrentRank, CurrentPerms, NeedsPassword = GetPlayerRank()
 
--- ================= PASSWORD (only if needed) =================
+-- ================= PASSWORD GUI =================
 local passwordPassed = not NeedsPassword
 
 if NeedsPassword then
@@ -198,8 +197,8 @@ do
     gui.Parent = CoreGui
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 380, 0, 280)
-    frame.Position = UDim2.new(0.5, -190, 0.5, -140)
+    frame.Size = UDim2.new(0, 380, 0, 290)
+    frame.Position = UDim2.new(0.5, -190, 0.5, -145)
     frame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
     frame.BorderSizePixel = 0
     frame.Parent = gui
@@ -247,7 +246,10 @@ end
 local success, Modal = pcall(function()
     return loadstring(game:HttpGet("https://github.com/BloxCrypto/Modal/releases/download/v1.0-beta/main.lua"))()
 end)
-if not success or not Modal then return end
+if not success or not Modal then
+    warn("[ZuzifyRBX] Failed to load Modal")
+    return
+end
 
 local Window = Modal:CreateWindow({
     Title = "ZuzifyRBX [" .. CurrentRank:upper() .. "]",
@@ -307,10 +309,8 @@ local Features = {
     TPSheriff = false,
     AntiDie = false,
 
-    -- Cheese Escape / General
     SpeedBoost = false,
     SuperJump = false,
-    NoClipFriends = false,
 }
 
 local RoleColors = {
@@ -326,7 +326,7 @@ local currentMurderer, currentSheriff = nil, nil
 local PlayerList = {}
 local originalTransparency = {}
 
--- ================= HELPERS (same as previous + improved) =================
+-- ================= HELPERS =================
 local function GetRole(plr)
     if not plr or not plr.Character then return "Innocent" end
     local function check(tool)
@@ -461,7 +461,7 @@ local function ApplyStats()
         if not char then return end
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
-            hum.WalkSpeed = Features.SpeedBoost and 40 or Features.WalkSpeed
+            hum.WalkSpeed = Features.SpeedBoost and 42 or Features.WalkSpeed
             hum.JumpPower = Features.SuperJump and 120 or Features.JumpPower
         end
     end)
@@ -644,7 +644,7 @@ local function DoCarry(style)
     end)
 end
 
--- Character + Players
+-- Character handling
 local function OnCharacter(char)
     task.wait(0.5)
     ApplyStats()
@@ -887,7 +887,7 @@ end)
 local Home = Window:AddTab("Home")
 Home:New("Title")({ Title = "Welcome" })
 Home:New("Button")({
-    Title = "ZuzifyRBX v3",
+    Title = "ZuzifyRBX Final Build",
     Description = "Rank: " .. CurrentRank .. " | Game: " .. SelectedGame,
     Callback = function() end
 })
@@ -897,10 +897,6 @@ Home:New("Button")({
     Title = "Unlock Beta",
     Description = "Sends your username for review",
     Callback = function()
-        if DISCORD_WEBHOOK == "YOUR_WEBHOOK_HERE" then
-            Window:Notify({Title = "Webhook", Description = "Not set", Duration = 3, Type = "Error"})
-            return
-        end
         pcall(function()
             local req = http_request or request or (syn and syn.request)
             if req then
@@ -913,8 +909,23 @@ Home:New("Button")({
                     })
                 })
                 Window:Notify({Title = "Beta", Description = "Request sent", Duration = 4, Type = "Success"})
+            else
+                Window:Notify({Title = "Error", Description = "No request support", Duration = 3, Type = "Error"})
             end
         end)
+    end
+})
+
+Home:New("Title")({ Title = "Zuzify News" })
+local newsText = "Loading..."
+pcall(function() newsText = game:HttpGet(NEWS_PASTEBIN) end)
+Home:New("Button")({
+    Title = "Latest News",
+    Description = newsText,
+    Callback = function()
+        local new = "Failed"
+        pcall(function() new = game:HttpGet(NEWS_PASTEBIN) end)
+        Window:Notify({Title = "News", Description = new, Duration = 7, Type = "Info"})
     end
 })
 
@@ -936,8 +947,8 @@ Movement:New("Slider")({ Title = "Fly Speed", Default = 60, Minimum = 10, Maximu
 Movement:New("Toggle")({ Title = "Infinite Jump", DefaultValue = false, Callback = function(v) Features.InfiniteJump = v end })
 Movement:New("Slider")({ Title = "Walk Speed", Default = 16, Minimum = 10, Maximum = 300, Callback = function(v) Features.WalkSpeed = v ApplyStats() end })
 Movement:New("Slider")({ Title = "Jump Power", Default = 50, Minimum = 30, Maximum = 300, Callback = function(v) Features.JumpPower = v ApplyStats() end })
-Movement:New("Toggle")({ Title = "Speed Boost (Cheese)", DefaultValue = false, Callback = function(v) Features.SpeedBoost = v ApplyStats() end })
-Movement:New("Toggle")({ Title = "Super Jump (Cheese)", DefaultValue = false, Callback = function(v) Features.SuperJump = v ApplyStats() end })
+Movement:New("Toggle")({ Title = "Speed Boost", DefaultValue = false, Callback = function(v) Features.SpeedBoost = v ApplyStats() end })
+Movement:New("Toggle")({ Title = "Super Jump", DefaultValue = false, Callback = function(v) Features.SuperJump = v ApplyStats() end })
 Movement:New("Toggle")({ Title = "Anti Fling", DefaultValue = true, Callback = function(v) Features.AntiFling = v end })
 Movement:New("Toggle")({ Title = "Anti Die", DefaultValue = false, Callback = function(v) Features.AntiDie = v end })
 Movement:New("Toggle")({ Title = "Hitbox Extender", DefaultValue = false, Callback = function(v) Features.HitboxExtender = v ApplyHitbox() end })
@@ -1027,9 +1038,9 @@ Settings:New("Button")({
 
 Window:Notify({
     Title = "ZuzifyRBX",
-    Description = "v3 loaded | " .. SelectedGame .. " | Rank: " .. CurrentRank,
+    Description = "Final Build loaded | " .. SelectedGame .. " | Rank: " .. CurrentRank,
     Duration = 5,
     Type = "Success"
 })
 
-print("ZuzifyRBX v3 | Rank:", CurrentRank, "| Game:", SelectedGame)
+print("ZuzifyRBX Final Build | Rank:", CurrentRank, "| Game:", SelectedGame)
