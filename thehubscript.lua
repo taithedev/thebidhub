@@ -3,7 +3,7 @@
 ]]
 
 --------------------------- CONFIG ---------------------------
-local CORRECT_PASSWORD = "tai"
+local CORRECT_PASSWORD = "ranyalikesbigfatoiledniggas67676767 "
 local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
 local NEWS_PASTEBIN = "https://pastebin.com/raw/sWSkNRcu"
 
