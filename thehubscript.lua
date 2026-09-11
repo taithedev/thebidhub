@@ -9,8 +9,8 @@ local VERSION    = "Gen7.2.0"
 local CREDITS    = "Owner: mrcoptai (717544874) • UI: Rayfield • DB: Supabase"
 local CONFIG_FILE = "ZuzifyRBX_Gen7"
 
-local SUPABASE_URL       = "https://YOUR_PROJECT.supabase.co"
-local SUPABASE_ANON_KEY  = "YOUR_ANON_KEY_HERE"
+local SUPABASE_URL       = "https://hfxpuqvishbfqlwxnnpe.supabase.co"
+local SUPABASE_ANON_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmeHB1cXZpc2hiZnFsd3hubnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkyMTUsImV4cCI6MjEwNDY1NTIxNX0.p8YyuvBhAw45YmKc-o-iMyvKKTPDEdKdnBfT2EUGx18"
 local DISCORD_WEBHOOK    = "https://discord.com/api/webhooks/1467436721951084792/KYX4LUdBw4K2i2Bpwc4UZRSF1JRNJ0Banw1KK1xrQzjPHXMh0DLIQ0Rs8giXVISjqwt0"
 local OWNER_UIDS         = { 717544874 }
 
