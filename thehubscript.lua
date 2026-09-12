@@ -106,8 +106,8 @@ SetLoading(0.02, "Initializing…")
 -- CONFIG
 --============================================================
 local VERSION           = "Gen11.0.0"
-local SUPABASE_URL      = "https://YOUR_PROJECT.supabase.co"
-local SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE"
+local SUPABASE_URL      = "https://hfxpuqvishbfqlwxnnpe.supabase.co"
+local SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmeHB1cXZpc2hiZnFsd3hubnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkyMTUsImV4cCI6MjEwNDY1NTIxNX0.p8YyuvBhAw45YmKc-o-iMyvKKTPDEdKdnBfT2EUGx18"
 local FOUNDER_UIDS      = { 717544874 } -- Founder (you)
 local OWNER_UIDS        = {}            -- Additional owners
 
