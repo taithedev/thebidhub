@@ -1,7 +1,7 @@
 --[[
     ╔═══════════════════════════════════════════════════════════╗
-    ║  ZuzifyRBX Gen11.1.0 — Founder Edition (FIXED)           ║
-    ║  Complete working script — no cuts, no errors            ║
+    ║  ZuzifyRBX Gen11.2.0 — Xeno + MM2 Edition                ║
+    ║  Founder • TUP • Community • Full MM2 Support            ║
     ╚═══════════════════════════════════════════════════════════╝
 ]]
 
@@ -49,6 +49,57 @@ do
 end
 
 --============================================================
+-- XENO EXECUTOR COMPATIBILITY
+--============================================================
+-- Xeno adds a lowercase 'httpget' global and its game:HttpGet
+-- can conflict with some scripts. We detect and use the safest.
+local function GetUrl(url)
+    -- Try game:HttpGet first (standard)
+    local ok, body = pcall(function() return game:HttpGet(url, true) end)
+    if ok and body and #body > 50 then return body end
+    -- Fallback to lowercase httpget (Xeno provides this)
+    if rawget(getfenv(), "httpget") then
+        ok, body = pcall(function() return httpget(url, true) end)
+        if ok and body and #body > 50 then return body end
+    end
+    -- Fallback to http_request
+    local req = rawget(getfenv(), "http_request") or rawget(getfenv(), "request")
+    if req then
+        ok, body = pcall(function() return req({Url = url, Method = "GET"}).Body end)
+        if ok and body and #body > 50 then return body end
+    end
+    return nil
+end
+
+local function XenoSafeLoadstring(source)
+    if not source or #source < 10 then return nil end
+    local fn
+    local ok = pcall(function() fn = loadstring(source) end)
+    if ok and fn then return fn end
+    -- Xeno sometimes needs 'load' instead of 'loadstring'
+    ok = pcall(function() fn = load(source) end)
+    if ok and fn then return fn end
+    return nil
+end
+
+-- Get CoreGui (Xeno sometimes needs a specific approach)
+local function GetUIContainer()
+    local container = CoreGui
+    local ok = pcall(function()
+        local test = Instance.new("ScreenGui")
+        test.Parent = CoreGui
+        test:Destroy()
+    end)
+    if not ok then
+        -- Fall back to PlayerGui
+        container = LP:WaitForChild("PlayerGui")
+    end
+    return container
+end
+
+local UIContainer = GetUIContainer()
+
+--============================================================
 -- LOADING SCREEN
 --============================================================
 local LoadingGui, LoadingLabel, LoadingFill
@@ -57,7 +108,7 @@ do
         LoadingGui = Instance.new("ScreenGui")
         LoadingGui.Name = "ZuzyLoading"; LoadingGui.ResetOnSpawn = false
         LoadingGui.IgnoreGuiInset = true; LoadingGui.DisplayOrder = 999
-        LoadingGui.Parent = CoreGui
+        LoadingGui.Parent = UIContainer
 
         local bg = Instance.new("Frame"); bg.Size = UDim2.new(1,0,1,0)
         bg.BackgroundColor3 = Color3.fromRGB(6,6,10); bg.BackgroundTransparency = 0.15
@@ -109,7 +160,7 @@ SetLoading(0.02, "Initializing…")
 --============================================================
 -- CONFIG — EDIT THESE
 --============================================================
-local VERSION           = "Gen11.1.0"
+local VERSION           = "Gen11.2.0"
 local SUPABASE_URL      = "https://hfxpuqvishbfqlwxnnpe.supabase.co"
 local SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmeHB1cXZpc2hiZnFsd3hubnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkyMTUsImV4cCI6MjEwNDY1NTIxNX0.p8YyuvBhAw45YmKc-o-iMyvKKTPDEdKdnBfT2EUGx18"
 local FOUNDER_UIDS      = { 717544874 }
@@ -118,7 +169,7 @@ local OWNER_UIDS        = {}
 --============================================================
 -- HTTP
 --============================================================
-local httpReq = http_request or request or (syn and syn.request) or (http and http.request)
+local httpReq = rawget(getfenv(), "http_request") or rawget(getfenv(), "request") or (syn and syn.request) or (http and http.request)
 local function http(method, url, headers, body)
     if not httpReq then return nil end
     local o = { Url = url, Method = method, Headers = headers or {} }
@@ -190,7 +241,7 @@ local function showDisclaimer()
     pcall(function()
         gui = Instance.new("ScreenGui"); gui.Name = "ZuzyDisc"
         gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true
-        gui.DisplayOrder = 998; gui.Parent = CoreGui
+        gui.DisplayOrder = 998; gui.Parent = UIContainer
 
         local fr = Instance.new("Frame"); fr.Size = UDim2.new(0,620,0,460)
         fr.Position = UDim2.new(0.5,-310,0.5,-230); fr.BackgroundColor3 = Color3.fromRGB(10,10,14)
@@ -257,7 +308,7 @@ end
 SetLoading(0.15, "Settings…")
 local GlobalSettings = {
     script_mode = "online", payment_mode = "paid_free",
-    maintenance_msg = "Offline.", min_version = "Gen11.1.0",
+    maintenance_msg = "Offline.", min_version = "Gen11.2.0",
     max_users = "0", applications_open = "true", tickets_open = "true",
 }
 task.spawn(function()
@@ -299,7 +350,7 @@ local function showLicensePopup()
     pcall(function()
         gui = Instance.new("ScreenGui"); gui.Name = "ZuzyLic"
         gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true
-        gui.DisplayOrder = 998; gui.Parent = CoreGui
+        gui.DisplayOrder = 998; gui.Parent = UIContainer
 
         local fr = Instance.new("Frame"); fr.Size = UDim2.new(0,560,0,420)
         fr.Position = UDim2.new(0.5,-280,0.5,-210); fr.BackgroundColor3 = Color3.fromRGB(8,8,12)
@@ -505,6 +556,7 @@ end)
 --============================================================
 SetLoading(0.50, "Features…")
 local F = {
+    -- ESP
     ESP=false, ESP_Names=true, ESP_Distance=true, ESP_Health=true, ESP_Weapon=true,
     ESP_Chams=true, ESP_Boxes=true, ESP_Tracers=false, ESP_TracersMode="Top",
     ESP_HeadDot=false, ESP_FillTransparency=0.5, ESP_OutlineTransparency=0.1,
@@ -513,26 +565,43 @@ local F = {
     ESP_FOVCircle=false, ESP_FOVRadius=140, ESP_Through=true,
     ESP_TrustedColor=Color3.fromRGB(255,215,0), ESP_GoldESP=false,
     ESP_Gradient=false, ESP_GradientSpeed=1,
+    -- TUP
     TrustedRainbowTrail=false, TrustedNametag="", TrustedKillEffect="None",
+    -- Visual
     Fullbright=false, CustomFOV=70,
+    -- Movement
     NoclipType="None", FlyType="None", FlySpeed=60,
     InfiniteJump=false, WalkSpeed=16, JumpPower=50,
     SpeedBoost=false, SuperJump=false, BunnyHop=false, Wallclimb=false,
     Dash=false, DashPower=30, TeleportToMouse=false,
     CFrameSpeed=false, CFrameSpeedValue=2,
+    -- Combat
     Aimbot=false, SilentAim=false, AimbotFOV=230,
     AutoKill=false, KnifeAura=false, AuraRange=15, KillTarget=false, AutoShoot=false,
     SelectedTarget=nil,
+    -- Troll
     FlingType="Normal", FlingNearest=false, FlingAll=false, FlingTarget=false,
     Invisible=false, RainbowSelf=false, Orbit=false, OrbitDist=6, LoopBehind=false,
     FreezeTarget=false, InvisibleTarget=false, SpinTarget=false, PlatformTarget=false,
     DisableJumpTarget=false, DisableMoveTarget=false, SlowMotionTarget=false,
     FreezeAll=false, SpinAll=false,
     Piggyback=false, FrontCarry=false, SideCarry=false,
+    -- Anti
     AntiAFK=true, AntiFling=true, AntiDie=false, AntiVoid=false, AntiSit=false,
     AntiRagdoll=false,
+    -- Emotes
     SelectedEmote=nil, ShareUsername=userRow.show_username or false,
+    -- Debug
     Debug_Overlay=false,
+    -- ★ MM2 SPECIFIC
+    MM2_CoinFarm=false,
+    MM2_AutoGrabGun=false,
+    MM2_RoleESP=false,
+    MM2_MurdererTP=false,
+    MM2_SheriffTP=false,
+    MM2_SheriffAimbot=false,
+    MM2_KnifeAuraMM2=false,
+    MM2_AutoShootMM2=false,
 }
 
 --============================================================
@@ -606,6 +675,67 @@ local function FormatTime(isoStr)
     elseif diff < 3600 then return math.floor(diff/60).."m ago"
     elseif diff < 86400 then return math.floor(diff/3600).."h ago"
     else return math.floor(diff/86400).."d ago" end
+end
+
+--============================================================
+-- ★ MM2 SPECIFIC FUNCTIONS
+--============================================================
+local function GetMurderer()
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LP then
+            local role = GetRole(p)
+            if role == "Murderer" then return p end
+        end
+    end
+    return nil
+end
+
+local function GetSheriff()
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LP then
+            local role = GetRole(p)
+            if role == "Sheriff" then return p end
+        end
+    end
+    return nil
+end
+
+local function MM2_CoinFarm()
+    pcall(function()
+        local root = GetMyRoot(); if not root then return end
+        -- Search for coins in workspace
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("money")) then
+                local dist = (root.Position - obj.Position).Magnitude
+                if dist < 300 then
+                    root.CFrame = CFrame.new(obj.Position + Vector3.new(0, 3, 0))
+                    break
+                end
+            end
+        end
+    end)
+end
+
+local function MM2_AutoGrabGun()
+    pcall(function()
+        local root = GetMyRoot(); if not root then return end
+        -- Look for dropped guns (Tools) in workspace
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("Tool") then
+                local handle = obj:FindFirstChild("Handle")
+                if handle and (handle.Position - root.Position).Magnitude < 100 then
+                    root.CFrame = CFrame.new(handle.Position + Vector3.new(0, 3, 0))
+                    break
+                end
+            end
+        end
+    end)
+end
+
+local function MM2_RoleESP()
+    -- Role ESP is built into the main ESP system via color mode "Role"
+    -- This just ensures the color mode is set correctly
+    F.ESP_ColorMode = "Role"
 end
 
 --============================================================
@@ -703,7 +833,7 @@ local function updateFOVCircle()
     if not FOVCircleObj or not FOVCircleObj.Parent then
         pcall(function()
             FOVCircleObj=Instance.new("ScreenGui"); FOVCircleObj.Name="ZFOV"
-            FOVCircleObj.ResetOnSpawn=false; FOVCircleObj.IgnoreGuiInset=true; FOVCircleObj.Parent=CoreGui
+            FOVCircleObj.ResetOnSpawn=false; FOVCircleObj.IgnoreGuiInset=true; FOVCircleObj.Parent=UIContainer
             local c=Instance.new("Frame"); c.Name="Circle"; c.BackgroundTransparency=1; c.Parent=FOVCircleObj
             local s=Instance.new("UIStroke"); s.Name="Stroke"; s.Thickness=1.5; s.Color=Color3.new(1,1,1); s.Transparency=0.3; s.Parent=c
             Instance.new("UICorner",c).CornerRadius=UDim.new(1,0)
@@ -835,7 +965,7 @@ local function setupDebugGui()
     if DebugGui then return end
     pcall(function()
         DebugGui=Instance.new("ScreenGui"); DebugGui.Name="ZDebug"; DebugGui.ResetOnSpawn=false
-        DebugGui.IgnoreGuiInset=true; DebugGui.Parent=CoreGui
+        DebugGui.IgnoreGuiInset=true; DebugGui.Parent=UIContainer
         local fr=Instance.new("Frame"); fr.Size=UDim2.new(0,260,0,220); fr.Position=UDim2.new(0,10,0.5,-110)
         fr.BackgroundColor3=Color3.new(0,0,0); fr.BackgroundTransparency=0.3; fr.BorderSizePixel=0; fr.Parent=DebugGui
         Instance.new("UICorner",fr).CornerRadius=UDim.new(0,8)
@@ -889,6 +1019,7 @@ RunService.RenderStepped:Connect(function()
             DL.tup.Text="TUP: "..tostring(IsTrusted())
         elseif DebugGui then teardownDebugGui() end
 
+        -- ESP
         if now-lastHeavy > F.ESP_RefreshRate then
             lastHeavy = now
             if F.ESP and root then
@@ -1107,13 +1238,66 @@ RunService.RenderStepped:Connect(function()
             local hue=now%1; local c=Color3.fromHSV(hue,1,1)
             for _,p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.Color=c end end
         end
+
+        -- ★ MM2 SPECIFIC TOGGLES
+        if F.MM2_CoinFarm then MM2_CoinFarm() end
+        if F.MM2_AutoGrabGun then MM2_AutoGrabGun() end
+        if F.MM2_MurdererTP then
+            local m = GetMurderer()
+            if m and m.Character then
+                local tr = m.Character:FindFirstChild("HumanoidRootPart")
+                if tr then root.CFrame = tr.CFrame * CFrame.new(0, 0, 4) end
+            end
+        end
+        if F.MM2_SheriffTP then
+            local s = GetSheriff()
+            if s and s.Character then
+                local tr = s.Character:FindFirstChild("HumanoidRootPart")
+                if tr then root.CFrame = tr.CFrame * CFrame.new(0, 0, 4) end
+            end
+        end
+        if F.MM2_SheriffAimbot then
+            local s = GetSheriff()
+            if s and s.Character then
+                local part = s.Character:FindFirstChild("HumanoidRootPart")
+                if part then
+                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, part.Position)
+                end
+            end
+        end
+        if F.MM2_KnifeAuraMM2 then
+            local m = GetMurderer()
+            if m == LP and root then
+                for _,p in ipairs(Players:GetPlayers()) do
+                    if p~=LP and p.Character then
+                        local tr = p.Character:FindFirstChild("HumanoidRootPart")
+                        if tr and (root.Position - tr.Position).Magnitude < F.AuraRange then
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            if tool then pcall(function() tool:Activate() end) end
+                        end
+                    end
+                end
+            end
+        end
+        if F.MM2_AutoShootMM2 then
+            local tool = char and char:FindFirstChildOfClass("Tool")
+            if tool then
+                local n = string.lower(tool.Name)
+                if n:find("gun") or n:find("revolver") then
+                    if now - jumpDeb > 0.4 then
+                        jumpDeb = now
+                        pcall(function() tool:Activate() end)
+                    end
+                end
+            end
+        end
     end)
 end)
 
 SetLoading(0.70, "Loading UI…")
 
 --============================================================
--- LOAD FLUENT UI (robust, multi-URL)
+-- LOAD FLUENT UI (robust, multi-URL, Xeno-safe)
 --============================================================
 local Fluent, SaveManager, InterfaceManager
 
@@ -1132,19 +1316,12 @@ local FLUENT_IFACE_URLS = {
     "https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua",
 }
 
-local function tryGet(url)
-    local ok, body = pcall(function() return game:HttpGet(url, true) end)
-    if ok and body and #body > 100 and not body:find("404") then return body end
-    return nil
-end
-
 local function tryLoadFromUrls(urls)
     for _, url in ipairs(urls) do
-        local body = tryGet(url)
+        local body = GetUrl(url)
         if body then
-            local fn
-            local ok = pcall(function() fn = loadstring(body) end)
-            if ok and fn then
+            local fn = XenoSafeLoadstring(body)
+            if fn then
                 local ok2, result = pcall(fn)
                 if ok2 and result then
                     SafeLog("fluent", "loaded from "..url:sub(1, 60))
@@ -1170,16 +1347,16 @@ InterfaceManager = tryLoadFromUrls(FLUENT_IFACE_URLS)
 SetLoading(0.85, "Building UI…")
 
 --============================================================
--- CREATE WINDOW (Acrylic = false to prevent CoreGui crash)
+-- CREATE WINDOW (Acrylic = false → Xeno-compatible)
 --============================================================
 local Window
 local okWindow, errWindow = pcall(function()
     Window = Fluent:CreateWindow({
         Title    = "ZuzifyRBX " .. VERSION,
-        SubTitle = "by mrcoptai — " .. RoleLabel(MY_ROLE),
+        SubTitle = "by mrcoptai — " .. RoleLabel(MY_ROLE) .. " | Xeno+MM2",
         TabWidth = 170,
         Size     = UDim2.fromOffset(620, 500),
-        Acrylic  = false,
+        Acrylic  = false,  -- ⬅️ REQUIRED for Xeno
         Theme    = "Dark",
         MinimizeKey = Enum.KeyCode.LeftControl,
     })
@@ -1188,7 +1365,7 @@ end)
 if not okWindow or not Window then
     SafeLog("window", "CreateWindow failed: "..tostring(errWindow))
     CloseLoading()
-    pcall(function() LP:Kick("ZuzifyRBX: Window creation failed.") end)
+    pcall(function() LP:Kick("ZuzifyRBX: Window creation failed. Try re-executing.") end)
     return
 end
 
@@ -1211,6 +1388,7 @@ end
 
 safeAddTab("Home",     "Home",      "house")
 safeAddTab("Visuals",  "Visuals",   "eye")
+safeAddTab("MM2",      "MM2 Tools", "target")
 safeAddTab("Movement", "Movement",  "move")
 safeAddTab("Players",  "Players",   "users")
 safeAddTab("Combat",   "Combat",    "crosshair")
@@ -1250,6 +1428,7 @@ G(Tabs.Home):AddParagraph({
               "\nTier: "..RoleLabel(MY_TIER)..
               "\nTUP Member: "..(IsTrusted() and "★ YES" or "No")..
               "\nWarnings: "..tostring(userRow.warn_count or 0)..
+              "\nExecutor: Xeno Compatible"..
               "\nTime: "..os.date("%Y-%m-%d %H:%M:%S"),
 })
 
@@ -1276,6 +1455,35 @@ G(Tabs.Home):AddButton({
         if setclipboard then setclipboard(tostring(MY_UID)) end
         pcall(function() Fluent:Notify({ Title = "Copied", Content = "User ID copied.", Duration = 3 }) end)
     end,
+})
+
+--============================================================
+-- MM2 TOOLS (Dedicated Tab)
+--============================================================
+G(Tabs.MM2):AddParagraph({
+    Title = "★ Murder Mystery 2 Tools",
+    Content = "Specialized tools for MM2. Some features require specific roles.",
+})
+
+G(Tabs.MM2):AddSection({ Title = "General" }).Size = UDim2.new(1,0,0,26)
+G(Tabs.MM2):AddToggle("MM2_CoinFarm", { Title = "★ Auto Coin Farm", Description = "Teleports to nearby coins", Default = false, Callback = function(v) F.MM2_CoinFarm=v end })
+G(Tabs.MM2):AddToggle("MM2_AutoGrabGun", { Title = "★ Auto Grab Gun", Description = "Picks up dropped guns", Default = false, Callback = function(v) F.MM2_AutoGrabGun=v end })
+G(Tabs.MM2):AddToggle("MM2_RoleESP", { Title = "★ Role ESP", Description = "Colors players by role (uses main ESP)", Default = false, Callback = function(v) F.MM2_RoleESP=v; if v then F.ESP_ColorMode="Role"; if not F.ESP then F.ESP=true; refreshESP() end end end })
+
+G(Tabs.MM2):AddSection({ Title = "Murderer Tools" }).Size = UDim2.new(1,0,0,26)
+G(Tabs.MM2):AddToggle("MM2_MurdererTP", { Title = "★ TP to Murderer", Default = false, Callback = function(v) F.MM2_MurdererTP=v end })
+G(Tabs.MM2):AddToggle("MM2_KnifeAuraMM2", { Title = "★ Knife Aura (Murderer)", Description = "Auto-attacks nearby players when you are the murderer", Default = false, Callback = function(v) F.MM2_KnifeAuraMM2=v end })
+G(Tabs.MM2):AddSlider("MM2_AuraRange", { Title = "Knife Aura Range", Default = 15, Min = 6, Max = 40, Rounding = 1, Callback = function(v) F.AuraRange=v end })
+
+G(Tabs.MM2):AddSection({ Title = "Sheriff Tools" }).Size = UDim2.new(1,0,0,26)
+G(Tabs.MM2):AddToggle("MM2_SheriffTP", { Title = "★ TP to Sheriff", Default = false, Callback = function(v) F.MM2_SheriffTP=v end })
+G(Tabs.MM2):AddToggle("MM2_SheriffAimbot", { Title = "★ Sheriff Aimbot", Description = "Locks camera to sheriff (when you have gun)", Default = false, Callback = function(v) F.MM2_SheriffAimbot=v end })
+G(Tabs.MM2):AddToggle("MM2_AutoShootMM2", { Title = "★ Auto Shoot (Sheriff)", Description = "Auto-fires when you have a gun", Default = false, Callback = function(v) F.MM2_AutoShootMM2=v end })
+
+G(Tabs.MM2):AddSection({ Title = "Info" }).Size = UDim2.new(1,0,0,26)
+G(Tabs.MM2):AddParagraph({
+    Title = "Role Detection",
+    Content = "Roles are detected from the Tool in your hand:\n• Knife → Murderer\n• Gun → Sheriff\n• None → Innocent\n\nESP colors update automatically.",
 })
 
 --============================================================
@@ -1726,6 +1934,7 @@ G(Tabs.Settings):AddParagraph({
               "\nYour Role: "..RoleLabel(MY_ROLE)..
               "\nYour Tier: "..RoleLabel(MY_TIER)..
               "\nTUP: "..(IsTrusted() and "★ Active" or "Not enrolled")..
+              "\nExecutor: Xeno Compatible"..
               "\nTime: "..os.date("%Y-%m-%d %H:%M:%S"),
 })
 G(Tabs.Settings):AddButton({ Title = "💾 Save Config to Cloud", Callback = function()
@@ -1991,7 +2200,7 @@ pcall(function()
         SubContent = IsFounder() and "★ FOUNDER ACCESS" or
                      IsStaff() and ("★ "..RoleLabel(MY_ROLE)) or
                      (IsTrusted() and "★ Trusted Program") or
-                     "Loaded successfully",
+                     "Loaded successfully — Xeno OK",
         Duration = 10,
     })
 end)
@@ -2003,4 +2212,4 @@ pcall(function()
 end)
 
 CloseLoading()
-SafeLog("boot", "ready")
+SafeLog("boot", "ready — Xeno + MM2")
