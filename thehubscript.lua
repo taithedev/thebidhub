@@ -1,7 +1,7 @@
 --[[
     ╔═══════════════════════════════════════════════════════╗
-    ║  ZuzifyRBX Gen8.2.0 — Fluent UI Edition              ║
-    ║  Fluent UI • Working Notifications • Safe F9 Logs    ║
+    ║  ZuzifyRBX Gen9.1.0 — Fluent UI Edition              ║
+    ║  Fully Working UI • Safe F9 Logs • Supabase Backend  ║
     ╚═══════════════════════════════════════════════════════╝
 ]]
 
@@ -31,9 +31,9 @@ end
 --============================================================
 -- CONFIG
 --============================================================
-local VERSION           = "Gen8.2.0"
-local SUPABASE_URL      = "https://hfxpuqvishbfqlwxnnpe.supabase.co"
-local SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmeHB1cXZpc2hiZnFsd3hubnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzkyMTUsImV4cCI6MjEwNDY1NTIxNX0.p8YyuvBhAw45YmKc-o-iMyvKKTPDEdKdnBfT2EUGx18"
+local VERSION           = "Gen9.1.0"
+local SUPABASE_URL      = "https://YOUR_PROJECT.supabase.co"
+local SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE"
 local OWNER_UIDS        = { 717544874 }
 
 local Players          = game:GetService("Players")
@@ -56,7 +56,7 @@ local MY_NAME   = LP.Name
 SafeLog("boot", "starting "..VERSION)
 
 --============================================================
--- HTTP (retry, sanitized errors)
+-- HTTP
 --============================================================
 local httpReq = http_request or request or (syn and syn.request) or (http and http.request)
 local function http(method, url, headers, body)
@@ -142,12 +142,11 @@ SafeLog("boot","disclaimer accepted")
 --============================================================
 local GlobalSettings = {
     script_mode="online", payment_mode="paid_free",
-    maintenance_msg="Offline.", min_version="Gen8.2.0", max_users="0",
+    maintenance_msg="Offline.", min_version="Gen9.1.0", max_users="0",
 }
 do
     local d = sbGet("zuzify_settings","select=*")
     if d then for _,r in ipairs(d) do GlobalSettings[r.key]=r.value end end
-    SafeLog("settings", "mode="..GlobalSettings.script_mode.." pay="..GlobalSettings.payment_mode)
 end
 
 local IS_OWNER = table.find(OWNER_UIDS, MY_UID) ~= nil
@@ -216,13 +215,12 @@ else
             r.tier = k.tier or "basic"
             r.role = (k.tier=="owner" or k.tier=="developer") and k.tier or (k.tier=="mod" and "mod") or (k.tier=="admin" and "admin") or "user"
             r.key = key; r.done = true
-            SafeLog("license","key accepted, tier="..r.tier)
             gui:Destroy()
         end)
     end)
     skip.MouseButton1Click:Connect(function()
         if GlobalSettings.payment_mode=="paid" and not IS_OWNER then msg.Text="Free disabled."; return end
-        r.done=true; SafeLog("license","continuing free"); gui:Destroy()
+        r.done=true; gui:Destroy()
     end)
     while not r.done do task.wait(0.1) end
     acquiredTier, acquiredRole, acquiredKey = r.tier, r.role, r.key
@@ -264,10 +262,8 @@ local function IsStaff() return HasTier(MY_ROLE,"mod") or HasTier(MY_TIER,"mod")
 local function IsAdmin() return HasTier(MY_ROLE,"admin") or HasTier(MY_TIER,"admin") end
 local function IsOwner() return HasTier(MY_ROLE,"owner") or HasTier(MY_TIER,"owner") end
 
-SafeLog("user","registered, role="..MY_ROLE.." tier="..MY_TIER)
-
 --============================================================
--- SESSION + FAST HEARTBEAT
+-- SESSION + HEARTBEAT
 --============================================================
 local JOB_ID   = game.JobId
 local PLACE_ID = game.PlaceId
@@ -286,7 +282,6 @@ task.spawn(function()
         pcall(function()
             http("POST", SUPABASE_URL.."/rest/v1/rpc/zuzify_kill_old_sessions", sbHdr(), { new_session_id=SESSION_ID, uid=MY_UID })
         end)
-        SafeLog("session","online")
     end
 
     while true do
@@ -305,7 +300,6 @@ task.spawn(function()
                     LP:Kick("Kicked: "..(m.kick_reason or ""))
                 end
                 if m.role ~= lastRole or m.tier ~= lastTier then
-                    SafeLog("role","update to "..(m.role or "?").."/"..(m.tier or "?"))
                     lastRole, lastTier = m.role, m.tier
                     MY_ROLE = m.role or MY_ROLE
                     MY_TIER = m.tier or MY_TIER
@@ -326,61 +320,14 @@ task.spawn(function()
 end)
 
 --============================================================
--- LOAD FLUENT UI + ADDONS
---============================================================
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
-
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("ZuzifyRBX")
-SaveManager:SetFolder("ZuzifyRBX/Configs")
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-
-SafeLog("ui","Fluent loaded")
-
---============================================================
--- CREATE WINDOW + TABS
---============================================================
-local Window = Fluent:CreateWindow({
-    Title     = "ZuzifyRBX " .. VERSION,
-    SubTitle  = "by mrcoptai",
-    TabWidth  = 160,
-    Size      = UDim2.fromOffset(580, 460),
-    Acrylic   = true,
-    Theme     = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl,
-})
-
-local Tabs = {
-    Home     = Window:AddTab({ Title = "Home",      Icon = "house" }),
-    Visuals  = Window:AddTab({ Title = "Visuals",   Icon = "eye" }),
-    Movement = Window:AddTab({ Title = "Movement",  Icon = "move" }),
-    Players  = Window:AddTab({ Title = "Players",   Icon = "users" }),
-    Combat   = Window:AddTab({ Title = "Combat",    Icon = "crosshair" }),
-    Troll    = Window:AddTab({ Title = "Troll",     Icon = "ghost" }),
-    Emotes   = Window:AddTab({ Title = "Emotes",    Icon = "smile" }),
-    Anti     = Window:AddTab({ Title = "Anti",      Icon = "shield" }),
-    Debug    = Window:AddTab({ Title = "Debug",     Icon = "terminal" }),
-    Settings = Window:AddTab({ Title = "Settings",  Icon = "settings" }),
-    Staff    = nil, -- set below if staff
-}
-
-local Options = Fluent.Options
-
---============================================================
 -- FEATURES TABLE
 --============================================================
 local F = {
     ESP=false, ESP_Names=true, ESP_Distance=true, ESP_Health=true, ESP_Weapon=true,
     ESP_Chams=true, ESP_Boxes=true, ESP_Tracers=false, ESP_TracersMode="Top",
-    ESP_Skeleton=false, ESP_HeadDot=false, ESP_Facing=false,
+    ESP_Skeleton=false, ESP_HeadDot=false,
     ESP_FillTransparency=0.5, ESP_OutlineTransparency=0.1,
-    ESP_TeamCheck=true, ESP_DeadCheck=true, ESP_MaxDistance=1500, ESP_RefreshRate=0.1,
+    ESP_DeadCheck=true, ESP_MaxDistance=1500, ESP_RefreshRate=0.1,
     ESP_ColorMode="Role", ESP_ShowOnlyMurderer=false, ESP_ShowOnlySheriff=false,
     ESP_FOVCircle=false, ESP_FOVRadius=140, ESP_Through=true,
     Fullbright=false, CustomFOV=70,
@@ -399,68 +346,10 @@ local F = {
     FreezeAll=false, SpinAll=false,
     Piggyback=false, FrontCarry=false, SideCarry=false,
     AntiAFK=true, AntiFling=true, AntiDie=false, AntiVoid=false, AntiSit=false,
-    AntiRagdoll=false, AntiTrip=false,
+    AntiRagdoll=false,
     SelectedEmote=nil, ShareUsername=userRow.show_username or false,
     Debug_Overlay=false,
 }
-
---============================================================
--- REAL CLOUD CONFIG (Supabase JSONB)
---============================================================
-local function serializeConfig()
-    local out = {}
-    for k,v in pairs(F) do
-        local t = type(v)
-        if t=="boolean" or t=="number" or t=="string" then
-            out[k] = v
-        end
-    end
-    return out
-end
-
-local function deserializeConfig(data)
-    if type(data) ~= "table" then return end
-    for k,v in pairs(data) do
-        if F[k] ~= nil then
-            local et = type(F[k])
-            local vt = type(v)
-            if et == vt then
-                F[k] = v
-            elseif et=="number" and vt=="string" then
-                F[k] = tonumber(v) or F[k]
-            end
-        end
-    end
-end
-
-local function SaveConfig()
-    local ok = pcall(function()
-        local cfg = serializeConfig()
-        sbPatch("zuzify_users","user_id=eq."..MY_UID, { config=cfg, config_updated_at=nowISO() })
-    end)
-    SafeLog("config", ok and "saved to cloud" or "save failed")
-    Fluent:Notify({ Title = "Config", Content = ok and "✅ Saved to cloud." or "❌ Save failed.", Duration = 4 })
-end
-
-local function LoadConfig()
-    local ok = pcall(function()
-        local d = sbGet("zuzify_users","user_id=eq."..MY_UID.."&select=config")
-        if d and #d>0 and d[1].config then
-            deserializeConfig(d[1].config)
-        end
-    end)
-    SafeLog("config", ok and "loaded from cloud" or "load failed")
-    Fluent:Notify({ Title = "Config", Content = ok and "✅ Loaded from cloud." or "❌ Load failed.", Duration = 4 })
-end
-
--- Auto-load on boot
-pcall(function()
-    local d = sbGet("zuzify_users","user_id=eq."..MY_UID.."&select=config")
-    if d and #d>0 and d[1].config then
-        deserializeConfig(d[1].config)
-        SafeLog("config", "auto-loaded")
-    end
-end)
 
 --============================================================
 -- EMOTES
@@ -472,7 +361,6 @@ local enames = {"Dance","Robot","Floss","Twist","Whip","Wave","Point","Salute","
 local ei=0
 for k=1,#enames do ei=ei+1; E(enames[k].." "..ei, "rbxassetid://"..eids[((k-1)%#eids)+1]) end
 for k=1,200 do ei=ei+1; E("Extra "..ei, "rbxassetid://"..eids[((k-1)%#eids)+1]..math.random(10,99)) end
-SafeLog("emotes","loaded "..#EmoteList)
 
 --============================================================
 -- HELPERS
@@ -586,21 +474,6 @@ local function createESP(plr)
         local line=Instance.new("LineHandleAdornment"); line.Name="ZTracer"; line.Adornee=root
         line.Length=0; line.Thickness=1; line.AlwaysOnTop=F.ESP_Through; line.Parent=root; o.Tracer=line
     end
-    if F.ESP_Skeleton then
-        local folder=Instance.new("Folder"); folder.Name="ZSkel"; folder.Parent=c; o.Skeleton={}
-        local function mk(a,b)
-            if not a or not b then return end
-            local l=Instance.new("LineHandleAdornment"); l.Adornee=a; l.Length=0
-            l.Thickness=1; l.AlwaysOnTop=F.ESP_Through; l.Color3=Color3.new(1,1,1); l.Parent=folder
-            table.insert(o.Skeleton,{line=l,a=a,b=b})
-        end
-        local torso=c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso")
-        mk(head,torso)
-        mk(torso,c:FindFirstChild("Left Arm") or c:FindFirstChild("LeftUpperArm"))
-        mk(torso,c:FindFirstChild("Right Arm") or c:FindFirstChild("RightUpperArm"))
-        mk(torso,c:FindFirstChild("Left Leg") or c:FindFirstChild("LeftUpperLeg"))
-        mk(torso,c:FindFirstChild("Right Leg") or c:FindFirstChild("RightUpperLeg"))
-    end
     ESPObjects[plr]=o
 end
 
@@ -632,7 +505,7 @@ local function updateFOVCircle()
 end
 
 --============================================================
--- TROLL FUNCTIONS
+-- TROLLS
 --============================================================
 local function Fling(plr)
     local c=plr and plr.Character; if not c then return end
@@ -676,7 +549,6 @@ local function OnChar()
     if F.FlyType~="None" then SetupFly() end
     if F.Invisible then SetInvis(true) end
     if F.ESP then task.delay(0.3, refreshESP) end
-    SafeLog("character","spawned")
 end
 if LP.Character then OnChar() end
 LP.CharacterAdded:Connect(OnChar)
@@ -718,7 +590,6 @@ RunService.RenderStepped:Connect(function()
     local hum = GetMyHum()
     if root and root.Position.Y > -50 then lastSafe = root.Position end
 
-    -- Debug overlay
     if F.Debug_Overlay then
         if not DebugGui then setupDebugGui() end
         fpsF = fpsF+1
@@ -737,7 +608,6 @@ RunService.RenderStepped:Connect(function()
         DL.up.Text="Uptime: "..os.date("!%H:%M:%S", math.floor(now-boot))
     elseif DebugGui then teardownDebugGui() end
 
-    -- Heavy ESP update
     if now-lastHeavy > F.ESP_RefreshRate then
         lastHeavy = now
         if F.ESP and root then
@@ -759,7 +629,6 @@ RunService.RenderStepped:Connect(function()
                     if o.Box then o.Box.Visible=vis end
                     if o.Tracer then o.Tracer.Visible=vis end
                     if o.HeadDot then o.HeadDot.Enabled=vis end
-                    if o.Skeleton then for _,s in ipairs(o.Skeleton) do s.line.Visible=vis end end
 
                     if vis then
                         local col = getESPColor(plr, d)
@@ -778,10 +647,6 @@ RunService.RenderStepped:Connect(function()
                         if o.Highlight then o.Highlight.FillColor=col; o.Highlight.OutlineColor=col end
                         if o.Box then o.Box.Color3=col end
                         if o.HeadDotFrame then o.HeadDotFrame.BackgroundColor3=col end
-                        if o.Skeleton then for _,s in ipairs(o.Skeleton) do
-                            s.line.Color3=col
-                            pcall(function() s.line.Length=(s.a.Position-s.b.Position).Magnitude end)
-                        end end
                         if o.Tracer then
                             o.Tracer.Color3=col
                             local org = F.ESP_TracersMode=="Bottom"
@@ -799,10 +664,8 @@ RunService.RenderStepped:Connect(function()
 
     if not root or not hum then return end
 
-    -- Noclip
     if F.NoclipType~="None" then ApplyNoclip() end
 
-    -- Fly
     if F.FlyType~="None" and BodyVel and BodyGyro then
         local cam=Camera.CFrame; local dir=Vector3.zero
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir+=cam.LookVector end
@@ -816,7 +679,6 @@ RunService.RenderStepped:Connect(function()
         BodyGyro.CFrame=CFrame.new(root.Position, root.Position+cam.LookVector)
     end
 
-    -- CFrame speed
     if F.CFrameSpeed then
         local cam=Camera.CFrame; local dir=Vector3.zero
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir+=cam.LookVector end
@@ -827,7 +689,6 @@ RunService.RenderStepped:Connect(function()
         if dir.Magnitude>0 then root.CFrame+=dir.Unit*F.CFrameSpeedValue end
     end
 
-    -- Infinite jump (FIXED)
     if F.InfiniteJump then
         local st=hum:GetState()
         local ok = st==Enum.HumanoidStateType.Freefall or st==Enum.HumanoidStateType.Running
@@ -836,26 +697,18 @@ RunService.RenderStepped:Connect(function()
             hum:ChangeState(Enum.HumanoidStateType.Jumping); jumpDeb=now
         end
     end
-
-    -- Bunny hop (FIXED)
     if F.BunnyHop and hum.MoveDirection.Magnitude>0.1 and hum.FloorMaterial~=Enum.Material.Air and now-jumpDeb>0.25 then
         hum:ChangeState(Enum.HumanoidStateType.Jumping); jumpDeb=now
     end
-
-    -- Wallclimb
     if F.Wallclimb then
         local ray=Ray.new(root.Position, root.CFrame.LookVector*2)
         local hit=Workspace:FindPartOnRay(ray,char)
         if hit and hum.FloorMaterial==Enum.Material.Air then root.CFrame+=Vector3.new(0,0.5,0) end
     end
-
-    -- Dash
     if F.Dash and UserInputService:IsKeyDown(Enum.KeyCode.Space) and UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and now-jumpDeb>0.5 then
         jumpDeb=now; local d=Camera.CFrame.LookVector*F.DashPower
         root.AssemblyLinearVelocity=Vector3.new(d.X,0,d.Z)
     end
-
-    -- Teleport to mouse
     if F.TeleportToMouse and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local m=UserInputService:GetMouseLocation()
         local r=Camera:ScreenPointToRay(m.X,m.Y)
@@ -863,7 +716,6 @@ RunService.RenderStepped:Connect(function()
         if pos then root.CFrame=CFrame.new(pos+Vector3.new(0,3,0)) end
     end
 
-    -- Anti
     if F.AntiFling and root.AssemblyLinearVelocity.Magnitude>160 then
         root.AssemblyLinearVelocity=Vector3.zero; root.AssemblyAngularVelocity=Vector3.zero
     end
@@ -874,7 +726,6 @@ RunService.RenderStepped:Connect(function()
     if F.AntiSit and hum.Sit then hum.Sit=false end
     if F.AntiRagdoll and hum.PlatformStand then hum.PlatformStand=false end
 
-    -- Anti AFK
     if F.AntiAFK and now-lastAnti>60 then
         lastAnti=now
         pcall(function()
@@ -885,7 +736,6 @@ RunService.RenderStepped:Connect(function()
 
     if Camera.FieldOfView~=F.CustomFOV then Camera.FieldOfView=F.CustomFOV end
 
-    -- Orbit / carry
     if F.Orbit and F.SelectedTarget then
         local t=GetTarget()
         local tr=t and t.Character and t.Character:FindFirstChild("HumanoidRootPart")
@@ -899,7 +749,6 @@ RunService.RenderStepped:Connect(function()
     if F.FrontCarry then local tr=GetTargetRoot(); if tr then root.CFrame=tr.CFrame*CFrame.new(0,0,-3.1) end end
     if F.SideCarry then local tr=GetTargetRoot(); if tr then root.CFrame=tr.CFrame*CFrame.new(2.7,0.4,0) end end
 
-    -- Kill target
     if F.KillTarget then
         local tr=GetTargetRoot()
         if tr then
@@ -909,7 +758,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Aimbot
     if F.Aimbot or F.SilentAim then
         local t=GetClosest(F.AimbotFOV)
         if t and t.Character then
@@ -922,7 +770,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Auto kill / shoot
     if F.AutoKill and now-jumpDeb>1.2 then
         jumpDeb=now; local t=char:FindFirstChildOfClass("Tool")
         if t then pcall(function() t:Activate() end) end
@@ -935,7 +782,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Knife aura
     if F.KnifeAura then
         for _,p in ipairs(Players:GetPlayers()) do
             if p~=LP and p.Character then
@@ -948,12 +794,10 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Fling options
     if F.FlingNearest and now-jumpDeb>0.55 then jumpDeb=now; local c=GetClosest(55); if c then Fling(c) end end
     if F.FlingTarget and F.SelectedTarget and now-jumpDeb>0.4 then jumpDeb=now; local t=GetTarget(); if t then Fling(t) end end
     if F.FlingAll and now-jumpDeb>0.85 then jumpDeb=now; for _,p in ipairs(Players:GetPlayers()) do if p~=LP then Fling(p) end end end
 
-    -- Target trolls
     local t=GetTarget()
     if t and t.Character then
         if F.FreezeTarget then Freeze(t,true) else Freeze(t,false) end
@@ -976,84 +820,101 @@ RunService.RenderStepped:Connect(function()
         if F.SlowMotionTarget then local h=t.Character:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed=4 end end
     end
 
-    -- Mass trolls
     if F.FreezeAll then for _,p in ipairs(Players:GetPlayers()) do if p~=LP then Freeze(p,true) end end
     else for _,p in ipairs(Players:GetPlayers()) do if p~=LP then Freeze(p,false) end end end
     if F.SpinAll then for _,p in ipairs(Players:GetPlayers()) do if p~=LP then SpinT(p,true) end end
     else for _,p in ipairs(Players:GetPlayers()) do if p~=LP then SpinT(p,false) end end end
 
-    -- Rainbow
     if F.RainbowSelf then
         local hue=now%1; local c=Color3.fromHSV(hue,1,1)
         for _,p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.Color=c end end
     end
 end)
 
-SafeLog("loop","running")
+--============================================================
+-- LOAD FLUENT UI
+--============================================================
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "ZuzifyRBX " .. VERSION,
+    SubTitle = "by mrcoptai",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl,
+})
+
+local Tabs = {
+    Home     = Window:AddTab({ Title = "Home",      Icon = "house" }),
+    Visuals  = Window:AddTab({ Title = "Visuals",   Icon = "eye" }),
+    Movement = Window:AddTab({ Title = "Movement",  Icon = "move" }),
+    Players  = Window:AddTab({ Title = "Players",   Icon = "users" }),
+    Combat   = Window:AddTab({ Title = "Combat",    Icon = "crosshair" }),
+    Troll    = Window:AddTab({ Title = "Troll",     Icon = "ghost" }),
+    Emotes   = Window:AddTab({ Title = "Emotes",    Icon = "smile" }),
+    Anti     = Window:AddTab({ Title = "Anti",      Icon = "shield" }),
+    Debug    = Window:AddTab({ Title = "Debug",     Icon = "terminal" }),
+    Settings = Window:AddTab({ Title = "Settings",  Icon = "settings" }),
+}
+
+local Options = Fluent.Options
 
 --============================================================
--- UI TABS (Fluent)
+-- HOME TAB
 --============================================================
+Tabs.Home:AddParagraph({
+    Title = "Welcome to ZuzifyRBX",
+    Content = "Version: " .. VERSION .. "\nRole: " .. MY_ROLE .. "\nTier: " .. MY_TIER ..
+              "\nWarnings: " .. tostring(userRow.warn_count or 0),
+})
 
--- HOME
 Tabs.Home:AddButton({
-    Title = "Status",
-    Description = "Show your current role and tier",
+    Title = "Show Status",
+    Description = "Show your account info as a notification",
     Callback = function()
         Fluent:Notify({
             Title = "Status",
-            Content = "User: "..MY_NAME.."\nRole: "..MY_ROLE.."\nTier: "..MY_TIER..
-                      "\nWarn: "..tostring(userRow.warn_count or 0).."\nVersion: "..VERSION,
+            Content = "User: "..MY_NAME.." | Role: "..MY_ROLE.." | Tier: "..MY_TIER,
+            SubContent = "Version: "..VERSION,
             Duration = 10,
         })
-    end
+    end,
 })
+
 Tabs.Home:AddButton({
     Title = "Copy User ID",
     Callback = function()
         if setclipboard then setclipboard(tostring(MY_UID)) end
-        Fluent:Notify({ Title = "Copied", Content = "User ID copied.", Duration = 3 })
-    end
-})
-
--- SETTINGS
-Tabs.Settings:AddButton({
-    Title = "💾 Save Config",
-    Description = "Save all settings to cloud",
-    Callback = SaveConfig,
-})
-Tabs.Settings:AddButton({
-    Title = "📂 Load Config",
-    Description = "Load your saved settings from cloud",
-    Callback = LoadConfig,
-})
-Tabs.Settings:AddButton({
-    Title = "🔄 Reset Config",
-    Callback = function()
-        for k,v in pairs(F) do
-            if type(v)=="boolean" then F[k]=false end
-        end
-        Fluent:Notify({ Title = "Reset", Content = "Local toggles cleared. Save to push.", Duration = 5 })
-    end,
-})
-Tabs.Settings:AddButton({
-    Title = "Version: "..VERSION,
-    Callback = function()
-        Fluent:Notify({ Title = "Version", Content = VERSION, Duration = 5 })
-    end,
-})
-Tabs.Settings:AddDropdown("ThemeDropdown", {
-    Title = "Theme",
-    Values = { "Dark", "Darker", "Light", "Aqua", "Amethyst", "Rose" },
-    Default = 1,
-    Multi = false,
-    Callback = function(v)
-        Fluent:SetTheme(v)
-        Fluent:Notify({ Title = "Theme", Content = v, Duration = 3 })
+        Fluent:Notify({ Title = "Copied", Content = "User ID copied to clipboard.", Duration = 4 })
     end,
 })
 
--- VISUALS
+Tabs.Home:AddButton({
+    Title = "Show Dialog Example",
+    Description = "Test the dialog system",
+    Callback = function()
+        Window:Dialog({
+            Title = "Confirm Action",
+            Content = "Do you want to continue?",
+            Buttons = {
+                { Title = "Yes", Callback = function()
+                    Fluent:Notify({ Title = "Confirmed", Content = "You confirmed.", Duration = 4 })
+                end },
+                { Title = "No", Callback = function()
+                    Fluent:Notify({ Title = "Cancelled", Content = "You cancelled.", Duration = 4 })
+                end },
+            },
+        })
+    end,
+})
+
+--============================================================
+-- VISUALS TAB
+--============================================================
 Tabs.Visuals:AddToggle("ESP", {
     Title = "Enable ESP",
     Default = false,
@@ -1104,11 +965,6 @@ Tabs.Visuals:AddToggle("ESP_HeadDot", {
     Title = "Head Dot",
     Default = false,
     Callback = function(v) F.ESP_HeadDot=v; refreshESP() end,
-})
-Tabs.Visuals:AddToggle("ESP_Skeleton", {
-    Title = "Skeleton",
-    Default = false,
-    Callback = function(v) F.ESP_Skeleton=v; refreshESP() end,
 })
 Tabs.Visuals:AddSlider("ESPMaxDist", {
     Title = "Max Distance",
@@ -1174,7 +1030,9 @@ Tabs.Visuals:AddSlider("FOVRadius", {
     Callback = function(v) F.ESP_FOVRadius=v; updateFOVCircle() end,
 })
 
--- MOVEMENT
+--============================================================
+-- MOVEMENT TAB
+--============================================================
 Tabs.Movement:AddDropdown("Noclip", {
     Title = "Noclip",
     Values = { "None", "Normal", "Full" },
@@ -1276,14 +1134,29 @@ for name,pos in pairs(MapTeleports) do
     })
 end
 
--- PLAYERS
+--============================================================
+-- PLAYERS TAB
+--============================================================
 local function pNames() local l={} for _,p in ipairs(Players:GetPlayers()) do if p~=LP then table.insert(l,p.Name) end end return l end
-Tabs.Players:AddDropdown("TargetDropdown", {
+
+local playerDropdown
+playerDropdown = Tabs.Players:AddDropdown("TargetDropdown", {
     Title = "Select Player",
     Values = (#pNames()>0) and pNames() or {"None"},
     Default = 1,
     Callback = function(v) F.SelectedTarget=v end,
 })
+
+Tabs.Players:AddButton({
+    Title = "Refresh Player List",
+    Callback = function()
+        local list = pNames()
+        if #list == 0 then list = {"None"} end
+        playerDropdown:SetValues(list)
+        Fluent:Notify({ Title = "Refreshed", Content = "Player list updated.", Duration = 3 })
+    end,
+})
+
 Tabs.Players:AddToggle("Spectate", {
     Title = "Spectate",
     Default = false,
@@ -1311,7 +1184,9 @@ Tabs.Players:AddToggle("LoopBehind", {
     Callback = function(v) F.LoopBehind=v end,
 })
 
--- COMBAT
+--============================================================
+-- COMBAT TAB
+--============================================================
 Tabs.Combat:AddToggle("Aimbot", {
     Title = "Aimbot",
     Default = false,
@@ -1359,7 +1234,9 @@ Tabs.Combat:AddToggle("KillTarget", {
     Callback = function(v) F.KillTarget=v end,
 })
 
--- TROLL
+--============================================================
+-- TROLL TAB
+--============================================================
 Tabs.Troll:AddDropdown("FlingType", {
     Title = "Fling Type",
     Values = { "Normal", "Strong", "Up" },
@@ -1431,7 +1308,7 @@ Tabs.Troll:AddButton({
     Callback = function() local t=GetTarget(); if t then ForceSit(t) end end,
 })
 Tabs.Troll:AddButton({
-    Title = "Explode",
+    Title = "Explode Target",
     Callback = function() local t=GetTarget(); if t then Explode(t) end end,
 })
 Tabs.Troll:AddButton({
@@ -1457,7 +1334,9 @@ Tabs.Troll:AddButton({
     Callback = function() for _,p in ipairs(Players:GetPlayers()) do if p~=LP then Explode(p) end end end,
 })
 
--- EMOTES
+--============================================================
+-- EMOTES TAB
+--============================================================
 local eNames={} for _,e in ipairs(EmoteList) do table.insert(eNames,e.Name) end
 Tabs.Emotes:AddDropdown("EmoteDropdown", {
     Title = "Emote",
@@ -1468,7 +1347,7 @@ Tabs.Emotes:AddDropdown("EmoteDropdown", {
     end,
 })
 Tabs.Emotes:AddInput("CustomEmote", {
-    Title = "Custom ID",
+    Title = "Custom Emote ID",
     Placeholder = "rbxassetid://...",
     Callback = function(t) if t~="" then F.SelectedEmote=t end end,
 })
@@ -1481,11 +1360,13 @@ Tabs.Emotes:AddButton({
     Callback = function() local t=GetTarget(); if t and F.SelectedEmote then clearEmotes(); PlayEmote(t,F.SelectedEmote) end end,
 })
 Tabs.Emotes:AddButton({
-    Title = "Stop",
+    Title = "Stop All Emotes",
     Callback = clearEmotes,
 })
 
--- ANTI
+--============================================================
+-- ANTI TAB
+--============================================================
 Tabs.Anti:AddToggle("AntiAFK", {
     Title = "Anti AFK",
     Default = true,
@@ -1517,7 +1398,9 @@ Tabs.Anti:AddToggle("AntiRagdoll", {
     Callback = function(v) F.AntiRagdoll=v end,
 })
 
--- DEBUG
+--============================================================
+-- DEBUG TAB
+--============================================================
 Tabs.Debug:AddToggle("DebugOverlay", {
     Title = "Debug Overlay",
     Default = false,
@@ -1528,7 +1411,7 @@ Tabs.Debug:AddButton({
     Callback = function() refreshESP(); Fluent:Notify({ Title = "ESP", Content = "Rebuilt.", Duration = 3 }) end,
 })
 Tabs.Debug:AddButton({
-    Title = "Clear Cache",
+    Title = "Clear Role Cache",
     Callback = function() CachedRoles={}; Fluent:Notify({ Title = "Cache", Content = "Cleared.", Duration = 3 }) end,
 })
 Tabs.Debug:AddButton({
@@ -1543,12 +1426,83 @@ Tabs.Debug:AddButton({
     end,
 })
 
--- STAFF MENU (only shown if staff)
-if IsStaff() then
-    Tabs.Staff = Window:AddTab({ Title = IsOwner() and "Owner" or (IsAdmin() and "Admin" or "Mod"), Icon = "crown" })
+--============================================================
+-- SETTINGS TAB (with SaveManager/InterfaceManager)
+--============================================================
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("ZuzifyRBX")
+SaveManager:SetFolder("ZuzifyRBX/Configs")
 
-    Tabs.Staff:AddButton({
-        Title = "🌐 Online Users",
+-- Cloud config buttons
+Tabs.Settings:AddButton({
+    Title = "💾 Save to Cloud (Supabase)",
+    Description = "Save all settings to Supabase for cross-session persistence",
+    Callback = function()
+        local cfg = {}
+        for k,v in pairs(F) do
+            if type(v)=="boolean" or type(v)=="number" or type(v)=="string" then
+                cfg[k]=v
+            end
+        end
+        local ok = pcall(function()
+            sbPatch("zuzify_users","user_id=eq."..MY_UID, { config=cfg, config_updated_at=nowISO() })
+        end)
+        Fluent:Notify({
+            Title = "Cloud Save",
+            Content = ok and "✅ Settings saved to cloud." or "❌ Failed to save.",
+            Duration = 5,
+        })
+    end,
+})
+Tabs.Settings:AddButton({
+    Title = "📂 Load from Cloud (Supabase)",
+    Description = "Load your previously saved settings",
+    Callback = function()
+        local d = sbGet("zuzify_users","user_id=eq."..MY_UID.."&select=config")
+        if d and #d>0 and d[1].config then
+            for k,v in pairs(d[1].config) do
+                if F[k]~=nil and type(F[k])==type(v) then F[k]=v end
+            end
+            Fluent:Notify({ Title = "Cloud Load", Content = "✅ Settings loaded. Rejoin to apply some.", Duration = 6 })
+        else
+            Fluent:Notify({ Title = "Cloud Load", Content = "❌ No saved config found.", Duration = 4 })
+        end
+    end,
+})
+Tabs.Settings:AddButton({
+    Title = "🔄 Reset Local Config",
+    Callback = function()
+        for k,v in pairs(F) do if type(v)=="boolean" then F[k]=false end end
+        Fluent:Notify({ Title = "Reset", Content = "Local toggles cleared.", Duration = 4 })
+    end,
+})
+
+Tabs.Settings:AddDropdown("ThemeDropdown", {
+    Title = "Theme",
+    Values = { "Dark", "Darker", "Light", "Aqua", "Amethyst", "Rose" },
+    Default = 1,
+    Multi = false,
+    Callback = function(v)
+        Fluent:SetTheme(v)
+    end,
+})
+
+-- Build the SaveManager and InterfaceManager sections
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+--============================================================
+-- STAFF TAB (only for staff)
+--============================================================
+if IsStaff() then
+    local staffName = IsOwner() and "Owner" or (IsAdmin() and "Admin" or "Mod")
+    local StaffTab = Window:AddTab({ Title = staffName, Icon = "crown" })
+
+    StaffTab:AddButton({
+        Title = "🌐 Show Online Users",
         Callback = function()
             local d=sbGet("zuzify_sessions","last_ping=gt."..HttpService:UrlEncode(DateTime.now():AddSeconds(-180):ToIsoDate()).."&select=*")
             local cnt=d and #d or 0
@@ -1560,103 +1514,110 @@ if IsStaff() then
             Fluent:Notify({ Title = "Online: "..cnt, Content = table.concat(lines,"\n"):sub(1,3500), Duration = 12 })
         end,
     })
-    Tabs.Staff:AddButton({
-        Title = "📊 Stats",
+    StaffTab:AddButton({
+        Title = "📊 Global Stats",
         Callback = function()
             local s=sbGet("zuzify_stats","select=*")
             if s and #s>0 then local r=s[1]
-                Fluent:Notify({ Title = "Stats",
-                    Content = "Users: "..r.total_users.."\nOnline: "..r.online_now.."\nPaid: "..r.paid_users..
-                              "\nTrusted: "..r.trusted_users.."\nStaff: "..r.staff_users.."\nBanned: "..r.banned_users,
-                    Duration = 12 })
+                Fluent:Notify({
+                    Title = "Stats",
+                    Content = "Users: "..r.total_users.."\nOnline: "..r.online_now..
+                              "\nPaid: "..r.paid_users.."\nTrusted: "..r.trusted_users..
+                              "\nStaff: "..r.staff_users.."\nBanned: "..r.banned_users,
+                    Duration = 12,
+                })
             end
         end,
     })
 
     -- Moderation
-    local tgt, rsn = "", ""
-    Tabs.Staff:AddInput("ModTarget", {
-        Title = "Target UserID",
+    local modTarget, modReason = "", ""
+    StaffTab:AddInput("ModTarget", {
+        Title = "Target User ID",
         Placeholder = "1234567",
-        Callback = function(t) tgt=t end,
+        Callback = function(t) modTarget=t end,
     })
-    Tabs.Staff:AddInput("ModReason", {
+    StaffTab:AddInput("ModReason", {
         Title = "Reason",
-        Placeholder = "reason",
-        Callback = function(t) rsn=t end,
+        Placeholder = "Reason for action",
+        Callback = function(t) modReason=t end,
     })
-    Tabs.Staff:AddButton({
-        Title = "⚠ Warn",
+    StaffTab:AddButton({
+        Title = "⚠ Warn User",
         Callback = function()
-            if tgt=="" or rsn=="" then return end
-            sbPost("zuzify_warnings",{ user_id=tonumber(tgt), moderator_id=MY_UID, moderator_name=MY_NAME, reason=rsn, severity=1 })
-            sbPost("zuzify_audit_logs",{ action="warn", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(tgt), reason=rsn })
-            Fluent:Notify({ Title = "Warned", Content = "Issued.", Duration = 4 })
+            if modTarget=="" or modReason=="" then
+                Fluent:Notify({ Title = "Error", Content = "Fill both fields.", Duration = 4 })
+                return
+            end
+            sbPost("zuzify_warnings",{ user_id=tonumber(modTarget), moderator_id=MY_UID, moderator_name=MY_NAME, reason=modReason, severity=1 })
+            sbPost("zuzify_audit_logs",{ action="warn", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(modTarget), reason=modReason })
+            Fluent:Notify({ Title = "Warned", Content = "User warned.", Duration = 4 })
         end,
     })
-    Tabs.Staff:AddButton({
-        Title = "👢 Kick",
+    StaffTab:AddButton({
+        Title = "👢 Kick User",
         Callback = function()
-            if tgt=="" then return end
-            sbPatch("zuzify_users","user_id=eq."..tgt,{ kick_signal=true, kick_reason=rsn })
-            sbPost("zuzify_audit_logs",{ action="kick", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(tgt), reason=rsn })
-            Fluent:Notify({ Title = "Kicked", Content = "Queued (20s).", Duration = 4 })
+            if modTarget=="" then return end
+            sbPatch("zuzify_users","user_id=eq."..modTarget,{ kick_signal=true, kick_reason=modReason })
+            sbPost("zuzify_audit_logs",{ action="kick", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(modTarget), reason=modReason })
+            Fluent:Notify({ Title = "Kicked", Content = "User will be kicked within 20s.", Duration = 4 })
         end,
     })
 
     if IsAdmin() then
-        Tabs.Staff:AddSlider("BanMinutes", {
-            Title = "Ban Minutes (0=perm)",
+        local banMins = 60
+        StaffTab:AddSlider("BanMinutes", {
+            Title = "Ban Duration (minutes, 0=perm)",
             Default = 60,
             Min = 0,
             Max = 43200,
             Rounding = 1,
-            Callback = function(v) end,
+            Callback = function(v) banMins=v end,
         })
-        Tabs.Staff:AddButton({
-            Title = "🚫 Ban",
+        StaffTab:AddButton({
+            Title = "🚫 Ban User",
             Callback = function()
-                if tgt=="" then return end
-                local u = 60>0 and DateTime.now():AddSeconds(60*60):ToIsoDate() or nil
-                sbPatch("zuzify_users","user_id=eq."..tgt,{ is_banned=true, ban_reason=rsn, ban_until=u, ban_by=MY_UID })
-                sbPost("zuzify_audit_logs",{ action="ban", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(tgt), reason=rsn })
-                Fluent:Notify({ Title = "Banned", Content = "Done.", Duration = 4 })
+                if modTarget=="" then return end
+                local until_ = banMins>0 and DateTime.now():AddSeconds(banMins*60):ToIsoDate() or nil
+                sbPatch("zuzify_users","user_id=eq."..modTarget,{ is_banned=true, ban_reason=modReason, ban_until=until_, ban_by=MY_UID })
+                sbPost("zuzify_audit_logs",{ action="ban", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(modTarget), reason=modReason })
+                Fluent:Notify({ Title = "Banned", Content = "User banned.", Duration = 4 })
             end,
         })
-        Tabs.Staff:AddButton({
-            Title = "✅ Unban",
+        StaffTab:AddButton({
+            Title = "✅ Unban User",
             Callback = function()
-                if tgt=="" then return end
-                sbPatch("zuzify_users","user_id=eq."..tgt,{ is_banned=false, ban_reason=nil, ban_until=nil })
-                Fluent:Notify({ Title = "Unbanned", Content = "Done.", Duration = 4 })
+                if modTarget=="" then return end
+                sbPatch("zuzify_users","user_id=eq."..modTarget,{ is_banned=false, ban_reason=nil, ban_until=nil })
+                Fluent:Notify({ Title = "Unbanned", Content = "User unbanned.", Duration = 4 })
             end,
         })
 
         -- Keys
         local newTier, newDays, keyCount = "premium", 30, 5
-        Tabs.Staff:AddDropdown("KeyTier", {
+        StaffTab:AddDropdown("KeyTier", {
             Title = "Key Tier",
             Values = {"basic","premium","trusted","mod","developer"},
             Default = 1,
             Callback = function(v) newTier=v end,
         })
-        Tabs.Staff:AddSlider("KeyDays", {
-            Title = "Key Days",
+        StaffTab:AddSlider("KeyDays", {
+            Title = "Key Duration (days)",
             Default = 30,
             Min = 1,
             Max = 3650,
             Rounding = 1,
             Callback = function(v) newDays=v end,
         })
-        Tabs.Staff:AddSlider("KeyCount", {
-            Title = "Key Count",
+        StaffTab:AddSlider("KeyCount", {
+            Title = "How many to generate",
             Default = 5,
             Min = 1,
             Max = 50,
             Rounding = 1,
             Callback = function(v) keyCount=v end,
         })
-        Tabs.Staff:AddButton({
+        StaffTab:AddButton({
             Title = "🎲 Generate Keys",
             Callback = function()
                 task.spawn(function()
@@ -1682,30 +1643,30 @@ if IsStaff() then
 
     if IsOwner() then
         -- Role Management
-        local roleId, roleGive = "", "trusted"
-        Tabs.Staff:AddInput("RoleTarget", {
+        local roleTarget, roleGive = "", "trusted"
+        StaffTab:AddInput("RoleTarget", {
             Title = "User ID for Role",
             Placeholder = "1234567",
-            Callback = function(t) roleId=t end,
+            Callback = function(t) roleTarget=t end,
         })
-        Tabs.Staff:AddDropdown("RoleGive", {
+        StaffTab:AddDropdown("RoleGive", {
             Title = "Role to Give",
             Values = {"user","basic","premium","trusted","mod","admin","developer","owner"},
             Default = 1,
             Callback = function(v) roleGive=v end,
         })
-        Tabs.Staff:AddButton({
+        StaffTab:AddButton({
             Title = "✅ Give Role",
             Callback = function()
-                if roleId=="" then return end
-                sbPatch("zuzify_users","user_id=eq."..roleId,{ role=roleGive, tier=roleGive })
-                sbPost("zuzify_audit_logs",{ action="role_change", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(roleId), metadata={ new_role=roleGive } })
-                Fluent:Notify({ Title = "Role Applied", Content = roleId.." → "..roleGive, Duration = 5 })
+                if roleTarget=="" then return end
+                sbPatch("zuzify_users","user_id=eq."..roleTarget,{ role=roleGive, tier=roleGive })
+                sbPost("zuzify_audit_logs",{ action="role_change", actor_id=MY_UID, actor_name=MY_NAME, target_id=tonumber(roleTarget), metadata={ new_role=roleGive } })
+                Fluent:Notify({ Title = "Role Applied", Content = "User "..roleTarget.." is now "..roleGive, Duration = 5 })
             end,
         })
 
-        -- Global
-        Tabs.Staff:AddDropdown("ScriptMode", {
+        -- Global settings
+        StaffTab:AddDropdown("ScriptMode", {
             Title = "Script Mode",
             Values = {"online","offline","maintenance"},
             Default = 1,
@@ -1715,7 +1676,7 @@ if IsStaff() then
                 Fluent:Notify({ Title = "Global", Content = "Script mode → "..v, Duration = 5 })
             end,
         })
-        Tabs.Staff:AddDropdown("PaymentMode", {
+        StaffTab:AddDropdown("PaymentMode", {
             Title = "Payment Mode",
             Values = {"free","paid","paid_free"},
             Default = 1,
@@ -1725,22 +1686,24 @@ if IsStaff() then
                 Fluent:Notify({ Title = "Global", Content = "Payment mode → "..v, Duration = 5 })
             end,
         })
-        Tabs.Staff:AddButton({
-            Title = "📜 Audit Logs",
+        StaffTab:AddButton({
+            Title = "📜 View Audit Logs",
             Callback = function()
                 local d=sbGet("zuzify_audit_logs","select=*&order=created_at.desc&limit=30")
                 local s={}
                 for _,a in ipairs(d or {}) do
                     table.insert(s, "["..(a.actor_name or a.actor_id).."] "..a.action..(a.target_id and (" → "..a.target_id) or "")..(a.reason and (": "..a.reason) or ""))
                 end
-                Fluent:Notify({ Title = "Audit", Content = table.concat(s,"\n"):sub(1,3500), Duration = 15 })
+                Fluent:Notify({ Title = "Audit Logs", Content = table.concat(s,"\n"):sub(1,3500), Duration = 15 })
             end,
         })
-        Tabs.Staff:AddButton({
+        StaffTab:AddButton({
             Title = "🚨 Broadcast Kick All",
             Callback = function()
                 local all=sbGet("zuzify_sessions","user_id=neq."..MY_UID.."&select=user_id")
-                for _,s in ipairs(all or {}) do sbPatch("zuzify_users","user_id=eq."..s.user_id,{ kick_signal=true, kick_reason="Maintenance" }) end
+                for _,s in ipairs(all or {}) do
+                    sbPatch("zuzify_users","user_id=eq."..s.user_id,{ kick_signal=true, kick_reason="Maintenance" })
+                end
                 Fluent:Notify({ Title = "Broadcast", Content = "All other users queued for kick.", Duration = 5 })
             end,
         })
@@ -1748,15 +1711,16 @@ if IsStaff() then
 end
 
 --============================================================
--- BOOT NOTIFICATION
+-- SELECT FIRST TAB + BOOT NOTIFICATION
 --============================================================
+Window:SelectTab(1)
+
 Fluent:Notify({
     Title = "ZuzifyRBX "..VERSION,
-    Content = "Welcome!\nRole: "..string.upper(MY_ROLE).."\nTier: "..string.upper(MY_TIER)..
-              (IsStaff() and "\n★ Staff Access" or ""),
-    SubContent = "Loaded successfully",
+    Content = "Welcome, "..MY_NAME.."!\nRole: "..string.upper(MY_ROLE).."\nTier: "..string.upper(MY_TIER),
+    SubContent = IsStaff() and "★ Staff access enabled" or "Loaded successfully",
     Duration = 10,
 })
 
-SaveManager:LoadAutoloadConfig()
+pcall(function() SaveManager:LoadAutoloadConfig() end)
 SafeLog("boot","ready")
